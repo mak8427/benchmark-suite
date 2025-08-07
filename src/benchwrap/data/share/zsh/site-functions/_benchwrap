@@ -1,0 +1,2 @@
+_BENCHWRAP_COMPLETE=source_zsh benchwrap \
+  > data/zsh/site-functions/_benchwrap

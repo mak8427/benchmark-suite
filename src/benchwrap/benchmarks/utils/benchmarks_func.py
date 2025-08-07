@@ -1,0 +1,121 @@
+import h5py
+import pandas as pd
+import time
+import importlib.resources as res
+import subprocess, pathlib, os, stat
+
+
+
+def run_slurm_job(bench_name: str, partition: str):
+    """
+    Submits a Slurm job, waits for it to complete, and post-processes its results.
+
+    Parameters:
+        job_cmd (str): The command to launch the job (e.g., using srun or sbatch).
+        post_cmd (str): The post-processing command to run after job completion (e.g., 'sh5util -j').
+
+    Workflow:
+        1. Submits the job and parses the Slurm job ID from stdout.
+        2. Polls `squeue` until the job disappears from the queue (i.e., it finishes).
+        3. Runs the post-processing command with the job ID.
+        4. Waits for the resulting HDF5 file to appear.
+        5. Reads and prints the structure and contents of the HDF5 file.
+        6. Queries Slurm accounting (`sacct`) to print energy and time metrics.
+    """
+    try:
+        job_id = sbatch_launch(bench_name, partition)
+    except subprocess.CalledProcessError as e:
+        print("sbatch stderr:\n", e.stderr.decode(), "\n---")
+        raise
+
+    print("Job n:", job_id, "submitted...")
+
+
+
+def h5_analysis(job_id: str):
+    post_cmd = "sh5util -j"
+
+    print("Job finished. Generating HDF5 output...")
+    subprocess.run(post_cmd.split() + [str(job_id)], check=True, capture_output=True)
+
+    result_file = f"job_{job_id}.h5"
+    while not os.path.exists(result_file):
+        time.sleep(5)
+
+    read_h5(result_file)
+
+    sacct_cmd = f"sacct --format=jobid,elapsed,AveCPUFreq,ConsumedEnergy,ConsumedEnergyRaw -P -j {job_id}"
+    result2 = subprocess.run(sacct_cmd.split(), check=True, capture_output=True)
+    print(result2.stdout.decode("utf-8"))
+
+
+
+
+
+def h5tree(filename, file, prefix=""):
+    """
+    Recursively prints the hierarchy of an HDF5 file and reads any datasets.
+
+    Parameters:
+        filename (str): The path to the HDF5 file (used by pandas).
+        file (h5py.File or h5py.Group or h5py.Dataset): Current node in HDF5 tree.
+        prefix (str): Visual indentation for printing tree structure (used recursively).
+
+    Behavior:
+        - If a group, it prints its keys and recurses into children.
+        - If a dataset, it reads and prints it using pandas.
+    """
+    print(prefix + file.name)
+    if isinstance(file, h5py._hl.group.Group):
+        print(file.keys())
+        for key in file.keys():
+            h5tree(filename, file[key], prefix=prefix + " ")
+    elif isinstance(file, h5py._hl.dataset.Dataset):
+        df = pd.read_hdf(filename, file.name)
+        print(df)
+
+def read_h5(filename):
+    """
+    Opens an HDF5 file and prints its full structure and contents using h5tree().
+
+    Parameters:
+        filename (str): Path to the HDF5 file.
+
+    Behavior:
+        - Opens the file using h5py.
+        - Delegates the recursive inspection to `h5tree()`.
+    """
+    with h5py.File(filename, "r") as f:
+        h5tree(filename, f)
+
+
+
+def _make_executable(p: pathlib.Path) -> None:
+    "Ensure the file has u+x so Slurm can read it."
+    p.chmod(p.stat().st_mode | stat.S_IXUSR)
+
+def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
+    """
+    Submit <bench_name>/job_start.sh with sbatch and return the job-ID.
+
+    Parameters
+    ----------
+    bench_name : str
+        Folder under ``benchwrap/benchmarks/`` (e.g. ``flops_matrix_mul``).
+    partition : str
+        Slurm partition (queue) to use.
+
+    Returns
+    -------
+    int
+        Slurm job ID raised by ``sbatch``.
+    """
+    bench_name = "."+bench_name
+    script_res = res.files("benchwrap.benchmarks") / bench_name / "job_start.sh"
+
+    with res.as_file(script_res) as script_path:
+        _make_executable(script_path)              # chmod +x just in case
+        cmd = ["sbatch", "-p", partition, str(script_path)]
+        completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+    return int(completed.stdout.split()[-1])

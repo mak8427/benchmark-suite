@@ -1,0 +1,33 @@
+[project]
+name = "benchwrap"
+version = "0.1.0"
+description = "CLI wrapper with energy-aware benchmarking"
+requires-python = ">=3.11"
+dependencies = [
+  "click>=8.1",
+  "numpy>=2.3.2",
+  "pandas>=2.3.1",
+  "h5py>=3.14.0",
+  "tables>=3.10.2",
+  "matplotlib>=3.9",
+]
+
+[project.scripts]
+benchwrap = "benchwrap.cli:benchwrap"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+[tool.setuptools.data-files]
+"share/fish/vendor_completions.d" = ["completions/benchwrap.fish"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
