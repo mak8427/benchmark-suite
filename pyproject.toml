@@ -26,7 +26,9 @@ where = ["src"]
 namespaces = false
 
 [tool.setuptools.data-files]
-"share/fish/vendor_completions.d" = ["completions/benchwrap.fish"]
+"share/fish/vendor_completions.d" = ["src/benchwrap/data/share/fish/vendor_completions.d/benchwrap.fish"]
+"share/bash-completion/completions" = ["src/benchwrap/data/share/bash-completion/completions/benchwrap.bash"]
+"share/zsh/site-functions" = ["src/benchwrap/data/share/zsh/site-functions/_benchwrap"]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

@@ -1,2 +1,8 @@
-_BENCHWRAP_COMPLETE=source_zsh benchwrap \
-  > data/zsh/site-functions/_benchwrap
+#compdef benchwrap
+# Zsh completion for benchwrap (Click)
+
+__benchwrap_zsh_complete() {
+  eval "$(env _BENCHWRAP_COMPLETE=zsh_source benchwrap)"
+}
+
+compdef __benchwrap_zsh_complete benchwrap
