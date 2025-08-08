@@ -82,29 +82,32 @@ def old_list(start: str, show_dir: bool) -> None:
 
 @benchwrap.command("list")
 def _list():
-    """List and run built-in benchmarks shipped with the wheel."""
+    """List available benchmarks (built-in and user)."""
     root = res.files(BENCH_PKG)
     pkg_modules = [p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"]
 
-    user_modules = []
+    user_py = []
+    user_dirs = []
     if os.path.isdir(USER_ROOT):
-        user_modules = [ p.stem for p in USER_ROOT.iterdir() if p.is_file() and p.suffix == ".py" and p.stem != "__init__"]
-    modules = pkg_modules + user_modules
+        for p in pathlib.Path(USER_ROOT).iterdir():
+            if p.is_file() and p.suffix == ".py" and p.stem != "__init__":
+                user_py.append(p.stem)
+            elif p.is_dir() and (p/"job_start.sh").exists():
+                user_dirs.append(p.name)
 
-    if not modules:
+    if not pkg_modules and not user_py and not user_dirs:
         click.echo("No benchmarks found"); return
 
-    print("== STANDARD MODULES ==")
-    index = 1
+    click.echo("== STANDARD MODULES ==")
     for m in pkg_modules:
-        click.echo(f"{index:2}. {m}")
-        index += 1
+        click.echo(f"  - {m}")
 
-    if len(user_modules) > 1:
-        print("== USER MODULES ==")
-        for m in user_modules:
-            click.echo(f"{index:2}. {m}")
-            index += 1
+    if user_py or user_dirs:
+        click.echo("== USER MODULES ==")
+        for m in user_py:
+            click.echo(f"  - {m}  (py)")
+        for d in user_dirs:
+            click.echo(f"  - {d}  (dir)")
 
 
 
@@ -112,50 +115,58 @@ def _list():
 @click.argument("name", required=False)
 @click.pass_context
 def run(ctx, name):
-    """Run built-in benchmarks shipped with the wheel."""
+    """Run a benchmark (built-in module, user .py, or user directory with job_start.sh)."""
     root = res.files(BENCH_PKG)
     pkg_modules = [p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"]
 
-    user_modules = []
+    user_py = []
+    user_dirs = []
     if os.path.isdir(USER_ROOT):
-        user_modules = [p.stem for p in USER_ROOT.iterdir() if p.is_file() and p.suffix == ".py" and p.stem != "__init__"]
+        for p in pathlib.Path(USER_ROOT).iterdir():
+            if p.is_file() and p.suffix == ".py" and p.stem != "__init__":
+                user_py.append(p.stem)
+            elif p.is_dir() and (p/"job_start.sh").exists():
+                user_dirs.append(p.name)
 
-    modules = pkg_modules + user_modules
-    if not modules:
+    all_names = pkg_modules + user_py + user_dirs
+    if not all_names:
         click.echo("No benchmarks found"); return
 
     # Print list if no input
     if not name:
-        index = 1
         click.echo("== STANDARD MODULES ==")
         for m in pkg_modules:
-            click.echo(f"{index:2}. {m}")
-            index += 1
-        if user_modules:
+            click.echo(f"  - {m}")
+        if user_py or user_dirs:
             click.echo("== USER MODULES ==")
-            for m in user_modules:
-                click.echo(f"{index:2}. {m}")
-                index += 1
+            for m in user_py:
+                click.echo(f"  - {m}  (py)")
+            for d in user_dirs:
+                click.echo(f"  - {d}  (dir)")
 
     # Resolve input if provided
     if name:
         choice = name.strip()
     else:
-        choice = click.prompt("Select number", default="", show_default=False).strip()
+        choice = click.prompt("Enter name", default="", show_default=False).strip()
         if not choice:
             return
 
-    # Match by number or name
-    if choice.isdigit() and 1 <= int(choice) <= len(modules):
-        selected = modules[int(choice) - 1]
-    elif choice in modules:
-        selected = choice
+    # Resolve and execute
+    if choice in pkg_modules:
+        modname = f"{BENCH_PKG}.{choice}"
+        click.echo(f"▶ running {modname}")
+        subprocess.run(["python", "-m", modname])
+    elif choice in user_py:
+        target = pathlib.Path(USER_ROOT) / f"{choice}.py"
+        click.echo(f"▶ running user py {target}")
+        subprocess.run(["python", str(target)])
+    elif choice in user_dirs:
+        script = pathlib.Path(USER_ROOT) / choice / "job_start.sh"
+        click.echo(f"▶ running {script}")
+        subprocess.run(["bash", str(script)])
     else:
-        click.echo("Invalid"); return
-
-    modname = f"{BENCH_PKG}.{selected}"
-    click.echo(f"▶ running {modname}")
-    subprocess.run(["python", "-m", modname])
+        click.echo("Invalid")
 
 
 @benchwrap.command()
@@ -166,7 +177,7 @@ def add(source):
     USER_ROOT.mkdir(parents=True, exist_ok=True)
 
     if src.is_file() and src.suffix == ".py":
-        dest = USER_ROOT / src.name
+        dest = USER_ROOT / src.stem
     elif src.is_dir() and (src/"job_start.sh").exists():
         dest = USER_ROOT / src.name
     else:
@@ -175,8 +186,15 @@ def add(source):
     if dest.exists():
         raise click.ClickException(f"{dest.name} already exists")
 
-    #TODO ADD LAUNCHER BASH SCRIPT FOR EACH PY FILE
-    
+    # For .py source: create a directory and add a default launcher
+    if src.is_file():
+        dest.mkdir(parents=True, exist_ok=False)
+        target_py = dest / src.name
+        shutil.copy2(src, target_py)
+        launcher = dest / "job_start.sh"
+        launcher.write_text("""#!/usr/bin/env bash\nset -euo pipefail\nDIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\npython \"$DIR/%s\"\n""" % src.name)
+        launcher.chmod(0o755)
+    else:
+        shutil.copytree(src, dest)
 
-    shutil.copytree(src, dest) if src.is_dir() else shutil.copy2(src, dest)
-    click.echo(f"✔ Added {dest.name}.  Run `benchwrap list` to see it.")  # paca
+    click.echo(f"✔ Added {dest.name}.  Run `benchwrap list` to see it.")
