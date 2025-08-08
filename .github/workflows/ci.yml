@@ -70,9 +70,13 @@ jobs:
       run: |
         pip install -e .
 
-    - name: Check package
+    - name: Build distributions
       run: |
-        twine check dist/*
+        rm -rf dist build *.egg-info
+        python -m build  # creates dist/*.tar.gz and dist/*.whl
+
+    - name: Check distributions with twine
+      run: twine check dist/*
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
