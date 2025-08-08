@@ -5,6 +5,8 @@ import pkgutil, subprocess, click
 import shutil
 import string
 
+from src.benchwrap.core import add_impl
+
 BENCH_PKG = "benchwrap.benchmarks"
 USER_ROOT = pathlib.Path(os.getenv("XDG_DATA_HOME",
                     pathlib.Path.home()/".local/share")) / "benchwrap/benchmarks"
@@ -172,29 +174,6 @@ def run(ctx, name):
 @benchwrap.command()
 @click.argument("source", type=click.Path(exists=True))
 def add(source):
-    """Copy a .py file *or* folder with job_start.sh into the user benchmarks dir."""
     src = pathlib.Path(source).resolve()
-    USER_ROOT.mkdir(parents=True, exist_ok=True)
-
-    if src.is_file() and src.suffix == ".py":
-        dest = USER_ROOT / src.stem
-    elif src.is_dir() and (src/"job_start.sh").exists():
-        dest = USER_ROOT / src.name
-    else:
-        raise click.ClickException("Need a .py file or a folder containing job_start.sh")
-
-    if dest.exists():
-        raise click.ClickException(f"{dest.name} already exists")
-
-    # For .py source: create a directory and add a default launcher
-    if src.is_file():
-        dest.mkdir(parents=True, exist_ok=False)
-        target_py = dest / src.name
-        shutil.copy2(src, target_py)
-        launcher = dest / "job_start.sh"
-        launcher.write_text("""#!/usr/bin/env bash\nset -euo pipefail\nDIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\npython \"$DIR/%s\"\n""" % src.name)
-        launcher.chmod(0o755)
-    else:
-        shutil.copytree(src, dest)
-
+    dest = add_impl(src, USER_ROOT)
     click.echo(f"✔ Added {dest.name}.  Run `benchwrap list` to see it.")
