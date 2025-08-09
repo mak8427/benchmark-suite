@@ -107,3 +107,14 @@ jobs:
           cat outdated.txt
           exit 1
         fi
+
+CLI Basic testing:
+
+  testing:
+    runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: setup-slurm-action
+      uses: koesterlab/setup-slurm-action@v1.1.0
+
