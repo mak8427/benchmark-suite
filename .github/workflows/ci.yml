@@ -107,19 +107,21 @@ jobs:
           cat outdated.txt
           exit 1
         fi
-
-CLI_Slurm:
-  testing:
+  cli-slurm:
     runs-on: ubuntu-latest
     services:
       mysql:
         image: mysql:8.0
-        env: { MYSQL_ROOT_PASSWORD: root }
-        ports: ["8888:3306"]
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
       - uses: actions/checkout@v4
       - uses: koesterlab/setup-slurm-action@v1.1.0
       - name: Smoke test
         run: squeue && sinfo && sbatch --version
+
+
 
