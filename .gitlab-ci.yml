@@ -1,0 +1,98 @@
+# .gitlab-ci.yml
+stages:
+  - test
+  - build
+  - deps
+  - cli
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+default:
+  image: python:3.12
+  before_script:
+    - python -m pip install --upgrade pip
+  cache:
+    key:
+      files:
+        - src/requirements.txt
+    paths:
+      - .cache/pip
+    policy: pull-push
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"   # pip will honor this
+
+test:
+  stage: test
+  script:
+    - pip install -r src/requirements.txt
+    - pip install pytest-cov pytest-xdist pre-commit
+    - pre-commit install
+    - pre-commit run --all-files || true
+    - python -m pytest tests/ -v --tb=short --cov=src --cov-report=xml --cov-report=term-missing
+    - pre-commit run --all-files || true
+  artifacts:
+    when: always
+    paths:
+      - coverage.xml
+    reports:
+      cobertura: coverage.xml
+
+build:
+  stage: build
+  needs: ["test"]
+  script:
+    - pip install -r src/requirements.txt
+    - pip install build twine
+    - pip install -e .
+    - rm -rf dist build *.egg-info
+    - python -m build
+    - twine check dist/*
+  artifacts:
+    when: always
+    paths:
+      - dist/
+    expire_in: 1 week
+
+dependency-update:
+  stage: deps
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  script:
+    - pip install pip-tools
+    - pip list --outdated --format=freeze > outdated.txt || true
+    - |
+      if [ -s outdated.txt ]; then
+        echo "Outdated dependencies found:"
+        cat outdated.txt
+        exit 1
+      fi
+  artifacts:
+    when: always
+    paths:
+      - outdated.txt
+
+cli-slurm:
+  stage: cli
+  services:
+    - name: mysql:8.0
+      alias: mysql
+  variables:
+    MYSQL_ROOT_PASSWORD: "root"
+  script:
+    # wait for MySQL service (GitLab exposes it as host 'mysql', no port mapping needed)
+    - |
+      until mysqladmin ping -h mysql -u root -proot --silent; do
+        echo "Waiting for MySQL..."
+        sleep 2
+      done
+    # lightweight Slurm client to mimic your smoke test; this does NOT start a controller
+    - apt-get update && apt-get install -y --no-install-recommends slurm-client && rm -rf /var/lib/apt/lists/*
+    - squeue --version && sinfo --version && sbatch --version
+    - pip install -r src/requirements.txt
+    - pip install build twine
+    - pip install -e .
+    - benchwrap list
