@@ -11,6 +11,9 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
 default:
   image: python:3.12
   before_script:
@@ -22,8 +25,6 @@ default:
     paths:
       - .cache/pip
     policy: pull-push
-  variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"   # pip will honor this
 
 test:
   stage: test
