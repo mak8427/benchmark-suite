@@ -121,5 +121,26 @@ jobs:
       - uses: actions/checkout@v3
 
       - uses: koesterlab/setup-slurm-action@v1
+      - name: Smoke test
+        run: squeue && sinfo && sbatch --version
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r src/requirements.txt
+          pip install build twine
+
+      - name: Build package
+        run: |
+          pip install -e .
+
+      - name: list
+        run: |
+          benchwrap list
 
 
