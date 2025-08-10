@@ -89,10 +89,6 @@ cli-slurm:
   script:
     - apt-get update
     - apt-get install -y wget gnupg lsb-release
-    - wget -qO- https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --dearmor | tee /usr/share/keyrings/mysql.gpg >/dev/null
-    - echo "deb [signed-by=/usr/share/keyrings/mysql.gpg] http://repo.mysql.com/apt/debian $(lsb_release -sc) mysql-8.0" > /etc/apt/sources.list.d/mysql.list
-    - apt-get update && apt-get install -y mysql-client
-    - until mysqladmin ping -h mysql -u root -proot --silent; do echo "Waiting for MySQL..."; sleep 2; done
     # lightweight Slurm client to mimic your smoke test; this does NOT start a controller
     - apt-get update && apt-get install -y --no-install-recommends slurm-client && rm -rf /var/lib/apt/lists/*
     - squeue --version && sinfo --version && sbatch --version
