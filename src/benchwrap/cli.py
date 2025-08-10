@@ -5,7 +5,7 @@ import pkgutil, subprocess, click
 import shutil
 import string
 
-from src.benchwrap.core import add_impl
+from core import add_impl
 
 BENCH_PKG = "benchwrap.benchmarks"
 USER_ROOT = pathlib.Path(os.getenv("XDG_DATA_HOME",
