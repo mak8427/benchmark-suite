@@ -144,6 +144,8 @@ jobs:
           benchwrap list
 
       - name: test run
+        run: |
+          benchwrap run mem_bandwidth
 
 
 
