@@ -114,8 +114,8 @@ def _list():
 
 
 @benchwrap.command("run")
-@click.argument("name", required=False, help='script name')
-@click.argument("partition", required=False, help="partition")
+@click.argument("name", required=False)
+@click.argument("partition", required=False)
 @click.pass_context
 def run(ctx, name,partition):
     """Run a benchmark (built-in module, user .py, or user directory with job_start.sh)."""
