@@ -12,7 +12,7 @@
 module load likwid
 source activate energy
 
-srun likwid-perfctr -C 0-323-g FLOPS_DP -t 1000ms -O \
+srun likwid-perfctr -C 0-24-g FLOPS_DP -t 1s -O \
     -o timeline_${SLURM_JOB_ID}.csv \
     python3 -u benchmarks/.mem_bandwidth/workload.py
 

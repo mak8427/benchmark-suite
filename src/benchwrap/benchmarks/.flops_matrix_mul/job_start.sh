@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=likwid-flops
+#SBATCH --job-name=flops_matrix_mul
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=24
@@ -7,15 +7,15 @@
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1
-
+#SBATCH --exclusive
 
 module load likwid
-source activate energy
+conda activate energy
 
-srun likwid-perfctr -C 0-23 -g FLOPS_DP -t 1000ms -O \
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+srun --cpu-bind=cores likwid-perfctr \
+     -g FLOPS_DP -t 200ms -O \
      -o timeline_${SLURM_JOB_ID}.csv \
      python3 -u benchmarks/.flops_matrix_mul/workload.py
 
-
-echo "LIKWID output saved to flops_${SLURM_JOB_ID}.csv"
-
+echo "LIKWID output saved to timeline_${SLURM_JOB_ID}.csv"
