@@ -115,8 +115,9 @@ def _list():
 
 @benchwrap.command("run")
 @click.argument("name", required=False)
+@click.argument("partition", required=False)
 @click.pass_context
-def run(ctx, name):
+def run(ctx, name,partition):
     """Run a benchmark (built-in module, user .py, or user directory with job_start.sh)."""
     root = res.files(BENCH_PKG)
     pkg_modules = [p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"]
@@ -158,11 +159,20 @@ def run(ctx, name):
     if choice in pkg_modules:
         modname = f"{BENCH_PKG}.{choice}"
         click.echo(f"▶ running {modname}")
-        subprocess.run(["python", "-m", modname])
+        if partition:
+            subprocess.run(["python", "-m", modname, "--partition", partition])
+        else:
+            subprocess.run(["python", "-m", modname])
+
     elif choice in user_py:
         target = pathlib.Path(USER_ROOT) / f"{choice}.py"
         click.echo(f"▶ running user py {target}")
-        subprocess.run(["python", str(target)])
+
+        if partition:
+            subprocess.run(["python", str(target), "--partition", partition])
+        else:
+            subprocess.run(["python", str(target)])
+
     elif choice in user_dirs:
         script = pathlib.Path(USER_ROOT) / choice / "job_start.sh"
         click.echo(f"▶ running {script}")

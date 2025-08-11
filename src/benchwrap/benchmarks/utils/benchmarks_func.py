@@ -23,6 +23,9 @@ def run_slurm_job(bench_name: str, partition: str):
         6. Queries Slurm accounting (`sacct`) to print energy and time metrics.
     """
     try:
+        if partition is None:
+            partition = ""
+
         job_id = sbatch_launch(bench_name, partition)
     except subprocess.CalledProcessError as e:
         print("sbatch stderr:\n", e.stderr.decode(), "\n---")
