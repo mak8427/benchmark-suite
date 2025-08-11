@@ -31,7 +31,10 @@ def run_slurm_job(bench_name: str, partition: str):
         print("sbatch stderr:\n", e.stderr.decode(), "\n---")
         raise
 
-    print("Job n:", job_id, "submitted...")
+    if partition is "":
+        print("Job n:", job_id, "submitted ...")#
+    else:
+        print(f"Job n: {job_id} submitted at partition: {partition} ...")
 
 
 

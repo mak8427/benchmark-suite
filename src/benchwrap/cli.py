@@ -114,8 +114,8 @@ def _list():
 
 
 @benchwrap.command("run")
-@click.argument("name", required=False)
-@click.argument("partition", required=False)
+@click.argument("name", required=False, help='script name')
+@click.argument("partition", required=False, help="partition")
 @click.pass_context
 def run(ctx, name,partition):
     """Run a benchmark (built-in module, user .py, or user directory with job_start.sh)."""
@@ -184,6 +184,7 @@ def run(ctx, name,partition):
 @benchwrap.command()
 @click.argument("source", type=click.Path(exists=True))
 def add(source):
+    """Add a new benchmark source."""
     src = pathlib.Path(source).resolve()
     dest = add_impl(src, USER_ROOT)
     click.echo(f"✔ Added {dest.name}.  Run `benchwrap list` to see it.")
