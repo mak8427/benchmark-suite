@@ -126,8 +126,8 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
         if partition:
             cmd += ["-p", partition]
         cmd += [
-            "--output", f"{os.environ['HOME']}/.local/share/likwid/%j/slurm-%j.out",
-            "--error",  f"{os.environ['HOME']}/.local/share/likwid/%j/slurm-%j.err",
+            "--output", f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.out",
+            "--error",  f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.err",
             str(script_path)
         ]
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
