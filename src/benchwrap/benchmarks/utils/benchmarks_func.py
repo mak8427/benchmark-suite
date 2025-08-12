@@ -116,12 +116,24 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
     int
         Slurm job ID raised by ``sbatch``.
     """
-    bench_name = "."+bench_name
+    bench_name = "." + bench_name
     script_res = res.files("benchwrap.benchmarks") / bench_name / "job_start.sh"
-
     with res.as_file(script_res) as script_path:
-        _make_executable(script_path)              # chmod +x just in case
-        cmd = ["sbatch", "-p", partition, str(script_path)]
+        _make_executable(script_path)
+
+
+        cmd = ["sbatch", "--parsable", "--hold"]
+        if partition:
+            cmd += ["-p", partition]
+        cmd += [
+            "--output", f"{os.environ['HOME']}/.local/share/likwid/%j/slurm-%j.out",
+            "--error",  f"{os.environ['HOME']}/.local/share/likwid/%j/slurm-%j.err",
+            str(script_path)
+        ]
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
-    return int(completed.stdout.split()[-1])
+
+        job_id = int(completed.stdout.strip().split(';')[0])
+        os.makedirs(f"{os.environ['HOME']}/.local/share/likwid/{job_id}", exist_ok=True)
+        subprocess.run(["scontrol", "release", str(job_id)], check=True)
+        return job_id
