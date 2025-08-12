@@ -5,10 +5,13 @@ import click
 
 LAUNCHER_TEXT = (
     "#!/usr/bin/env bash\nset -euo pipefail\n"
-    "DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\npython \"$DIR/%s\"\n"
+    'DIR="$(cd "$(dirname "$0")" && pwd)"\npython "$DIR/%s"\n'
 )
 
-def add_impl(source: pathlib.Path, user_root: pathlib.Path, launcher_text: str = LAUNCHER_TEXT) -> pathlib.Path:
+
+def add_impl(
+    source: pathlib.Path, user_root: pathlib.Path, launcher_text: str = LAUNCHER_TEXT
+) -> pathlib.Path:
     user_root.mkdir(parents=True, exist_ok=True)
     if source.is_file() and source.suffix == ".py":
         dest = user_root / source.stem

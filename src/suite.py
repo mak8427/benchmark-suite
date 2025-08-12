@@ -1,5 +1,8 @@
+import os
+import string
+import subprocess
 
-import os, subprocess, string, click
+import click
 
 
 @click.command()
@@ -29,16 +32,21 @@ def list(dir: bool) -> None:
     cwd = os.getcwd()
     path = cwd + "/benchmarks"
 
-
-    escape_chars = ['.', '_']  # Skip hidden and special-named files/dirs
+    escape_chars = [".", "_"]  # Skip hidden and special-named files/dirs
 
     # List visible files
-    files = [f for f in os.listdir(path)
-             if f[0] not in escape_chars and os.path.isfile(os.path.join(path, f))]
+    files = [
+        f
+        for f in os.listdir(path)
+        if f[0] not in escape_chars and os.path.isfile(os.path.join(path, f))
+    ]
 
     # List visible directories
-    dirs = [d for d in os.listdir(path)
-            if d[0] not in escape_chars and os.path.isdir(os.path.join(path, d))]
+    dirs = [
+        d
+        for d in os.listdir(path)
+        if d[0] not in escape_chars and os.path.isdir(os.path.join(path, d))
+    ]
 
     # Display file options with numeric labels: 1., 2., ...
     if files:
@@ -50,7 +58,9 @@ def list(dir: bool) -> None:
     if dirs:
         print("-directories---")
         for i, d in enumerate(dirs):
-            label = string.ascii_lowercase[i] if i < 26 else f"[{i}]"  # Extend beyond 'z' if needed
+            label = (
+                string.ascii_lowercase[i] if i < 26 else f"[{i}]"
+            )  # Extend beyond 'z' if needed
             print(f"{label}. {d}")
     print("")
 
@@ -59,15 +69,16 @@ def list(dir: bool) -> None:
     # If input is a number corresponding to a file, run it
     if choice.isdigit() and 1 <= int(choice) <= len(files):
         file = files[int(choice) - 1]
-        print(f'Run: {file}')
-        result = subprocess.run(["python", os.path.join(path, file)],
-                                capture_output=True, text=True)
+        print(f"Run: {file}")
+        result = subprocess.run(
+            ["python", os.path.join(path, file)], capture_output=True, text=True
+        )
         print(result.stdout)
         print(result.stderr)
         print(f"Exit code: {result.returncode}")
 
     # If input is a letter corresponding to a directory, recurse into it
-    elif choice in string.ascii_lowercase[:len(dirs)]:
+    elif choice in string.ascii_lowercase[: len(dirs)]:
         dir_index = string.ascii_lowercase.index(choice)
         new_path = os.path.join(path, dirs[dir_index])
         list(new_path)
@@ -76,10 +87,7 @@ def list(dir: bool) -> None:
         print("Invalid Input")
 
 
-
 if __name__ == "__main__":
     print("###")
     print("Welcome to NHR Energy Efficiency Benchmarking suite")
     print("Please choose a benchmark to run\n")
-
-

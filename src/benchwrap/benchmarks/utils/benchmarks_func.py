@@ -1,9 +1,12 @@
+import importlib.resources as res
+import os
+import pathlib
+import stat
+import subprocess
+import time
+
 import h5py
 import pandas as pd
-import time
-import importlib.resources as res
-import subprocess, pathlib, os, stat
-
 
 
 def run_slurm_job(bench_name: str, partition: str):
@@ -32,10 +35,9 @@ def run_slurm_job(bench_name: str, partition: str):
         raise
 
     if partition == "":
-        print("Job n:", job_id, "submitted ...")#
+        print("Job n:", job_id, "submitted ...")  #
     else:
         print(f"Job n: {job_id} submitted at partition: {partition} ...")
-
 
 
 def h5_analysis(job_id: str):
@@ -53,9 +55,6 @@ def h5_analysis(job_id: str):
     sacct_cmd = f"sacct --format=jobid,elapsed,AveCPUFreq,ConsumedEnergy,ConsumedEnergyRaw -P -j {job_id}"
     result2 = subprocess.run(sacct_cmd.split(), check=True, capture_output=True)
     print(result2.stdout.decode("utf-8"))
-
-
-
 
 
 def h5tree(filename, file, prefix=""):
@@ -80,6 +79,7 @@ def h5tree(filename, file, prefix=""):
         df = pd.read_hdf(filename, file.name)
         print(df)
 
+
 def read_h5(filename):
     """
     Opens an HDF5 file and prints its full structure and contents using h5tree().
@@ -95,10 +95,10 @@ def read_h5(filename):
         h5tree(filename, f)
 
 
-
 def _make_executable(p: pathlib.Path) -> None:
     "Ensure the file has u+x so Slurm can read it."
     p.chmod(p.stat().st_mode | stat.S_IXUSR)
+
 
 def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
     """
@@ -121,19 +121,19 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
     with res.as_file(script_res) as script_path:
         _make_executable(script_path)
 
-
         cmd = ["sbatch", "--parsable", "--hold"]
         if partition:
             cmd += ["-p", partition]
         cmd += [
-            "--output", f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.out",
-            "--error",  f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.err",
-            str(script_path)
+            "--output",
+            f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.out",
+            "--error",
+            f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.err",
+            str(script_path),
         ]
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
-
-        job_id = int(completed.stdout.strip().split(';')[0])
+        job_id = int(completed.stdout.strip().split(";")[0])
         os.makedirs(f"{os.environ['HOME']}/.local/share/likwid/{job_id}", exist_ok=True)
         subprocess.run(["scontrol", "release", str(job_id)], check=True)
         return job_id

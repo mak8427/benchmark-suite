@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # 2. Cache Hierarchy Test
-import numpy as np, time
+import time
+
+import numpy as np
+
 sizes = [2**i for i in range(10, 25)]  # 1KB to 32MB
 times = []
 
@@ -12,5 +15,5 @@ for sz in sizes:
     # Strided access to defeat prefetch
     for _ in range(100):
         a[::4] += 1  # 16-byte stride on 64-bit systems
-    times.append((sz, time.time()-start))
+    times.append((sz, time.time() - start))
 print("Cache test complete:", times[-3:])  # Show large-size results
