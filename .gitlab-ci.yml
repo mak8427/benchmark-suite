@@ -31,10 +31,15 @@ test:
   script:
     - pip install -r src/requirements.txt
     - pip install pytest-cov pytest-xdist pre-commit
-    - pre-commit install
-    - pre-commit run --all-files || true
+    - |
+      # run pre-commit only on tracked *.py files
+      PY_FILES="$(git ls-files '*.py' || true)"
+      if [ -n "$PY_FILES" ]; then pre-commit run --files $PY_FILES || true; fi
     - python -m pytest tests/ -v --tb=short --cov=src --cov-report=xml --cov-report=term-missing
-    - pre-commit run --all-files || true
+    - |
+      # run again after tests (still only *.py)
+      PY_FILES="$(git ls-files '*.py' || true)"
+      if [ -n "$PY_FILES" ]; then pre-commit run --files $PY_FILES || true; fi
   artifacts:
     when: always
     paths:
