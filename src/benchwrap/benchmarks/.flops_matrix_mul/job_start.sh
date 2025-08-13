@@ -9,7 +9,7 @@
 
 set -euo pipefail
 module load likwid
-conda activate energy
+source activate energy
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 DEST="$HOME/.local/share/benchwrap/bench_name_${SLURM_JOB_ID}"
 mkdir -p "$DEST"

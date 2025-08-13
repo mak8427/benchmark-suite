@@ -28,6 +28,7 @@ def run_slurm_job(bench_name: str, partition: str):
     try:
         if partition is None:
             partition = ""
+            print("Running No Partition provided")
 
         job_id = sbatch_launch(bench_name, partition)
     except subprocess.CalledProcessError as e:
