@@ -106,7 +106,7 @@ def old_list(start: str, show_dir: bool) -> None:
 @benchwrap.command("list")
 def _list():
     """List available benchmarks (built-in and user)."""
-    root = res.files(BENCH_PKG)
+    root = res.files(BENCH_ROOT)
     pkg_modules = [
         p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
     ]
