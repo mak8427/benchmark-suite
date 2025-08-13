@@ -23,7 +23,7 @@ trap 'rsync -a timeline_*.csv "$DEST/" 2>/dev/null || true' EXIT
 outfile="timeline_${SLURM_JOB_ID}.csv"
 
 srun --cpu-bind=cores \
-  likwid-perfctr -g FLOPS_DP -t 200ms \
+  likwid-perfctr -g FLOPS_DP -t 1s \
   python3 -u -m benchwrap.benchmarks.flops_matrix_mul.workload 1>&2 \
 | tee "$outfile" >/dev/null
 
