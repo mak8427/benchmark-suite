@@ -16,16 +16,13 @@ export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
 
-#Trap And start Jobs
-# 1) Save LIKWID timeline to CSV; 2) send your app's stdout to stderr so it doesn't mix
-trap 'rsync -a timeline_*.csv "$DEST/" 2>/dev/null || true' EXIT
+#Trap And start Job
 
-outfile="timeline_${SLURM_JOB_ID}.csv"
 
 srun --cpu-bind=cores \
   likwid-perfctr -g FLOPS_DP -t 200ms \
   python3 -u -m benchwrap.benchmarks.flops_matrix_mul_mini.workload 1>&2 \
-| tee "$outfile" >/dev/null
+
 
 echo "Results -> $DEST"
 
