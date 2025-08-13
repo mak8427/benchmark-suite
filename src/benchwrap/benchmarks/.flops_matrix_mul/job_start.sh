@@ -17,9 +17,14 @@ DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
 
 #Trap And start Jobs
+# 1) Save LIKWID timeline to CSV; 2) send your app's stdout to stderr so it doesn't mix
 trap 'rsync -a timeline_*.csv "$DEST/" 2>/dev/null || true' EXIT
-srun --cpu-bind=cores likwid-perfctr -g FLOPS_DP -t 200ms -O -o "timeline_${SLURM_JOB_ID}.csv" \
-       python3 -u benchmarks/.flops_matrix_mul/workload.py
+
+outfile="timeline_${SLURM_JOB_ID}.csv"
+srun --cpu-bind=cores \
+  likwid-perfctr -g FLOPS_DP -t 200ms \
+  bash -lc 'python3 -u benchmarks/.flops_matrix_mul/workload.py 1>&2' \
+  | tee "$outfile" >/dev/null
 
 echo "Results -> $DEST"
 

@@ -127,16 +127,16 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
             cmd += ["-p", partition]
         cmd += [
             "--output",
-            f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.out",
+            f"{os.environ['HOME']}/.local/share/benchwrap/job_%j/slurm-%j.out",
             "--error",
-            f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_%j/slurm-%j.err",
+            f"{os.environ['HOME']}/.local/share/benchwrap/job_%j/slurm-%j.err",
             str(script_path),
         ]
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
         job_id = int(completed.stdout.strip().split(";")[0])
         os.makedirs(
-            f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_{job_id}",
+            f"{os.environ['HOME']}/.local/share/benchwrap/job_{job_id}",
             exist_ok=True,
         )
         subprocess.run(["scontrol", "release", str(job_id)], check=True)
