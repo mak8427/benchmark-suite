@@ -11,6 +11,8 @@ import click
 from benchwrap.core import add_impl
 
 BENCH_PKG = "benchwrap.benchmarks"
+EXECUTORS_PKG = "benchwrap.executors"
+
 USER_ROOT = (
     pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
     / "benchwrap/benchmarks"
@@ -181,8 +183,9 @@ def run(ctx, name, partition):
 
     # Resolve and execute
     if choice in pkg_modules:
-        modname = f"{BENCH_PKG}.{choice}"
-        click.echo(f"▶ running {modname}")
+        click.echo(f"▶ running {BENCH_PKG}.{choice}")
+
+        modname = f"{EXECUTORS_PKG}.{choice}"
         if partition:
             subprocess.run(["python", "-m", modname, "--partition", partition])
         else:

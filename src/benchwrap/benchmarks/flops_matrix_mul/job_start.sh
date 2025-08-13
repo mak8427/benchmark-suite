@@ -24,7 +24,7 @@ outfile="timeline_${SLURM_JOB_ID}.csv"
 
 srun --cpu-bind=cores \
   likwid-perfctr -g FLOPS_DP -t 200ms \
-  python3 -u -c 'from importlib.resources import files; from runpy import run_path; p=files("benchwrap.benchmarks").joinpath(".flops_matrix_mul/workload.py"); run_path(str(p), run_name="__main__")' 1>&2 \
+  python3 -u -m benchwrap.benchmarks.flops_matrix_mul.workload 1>&2 \
 | tee "$outfile" >/dev/null
 
 echo "Results -> $DEST"
