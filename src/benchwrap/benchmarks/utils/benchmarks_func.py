@@ -134,6 +134,9 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
         job_id = int(completed.stdout.strip().split(";")[0])
-        os.makedirs(f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_{job_id}", exist_ok=True)
+        os.makedirs(
+            f"{os.environ['HOME']}/.local/share/benchwrap/bench_name_{job_id}",
+            exist_ok=True,
+        )
         subprocess.run(["scontrol", "release", str(job_id)], check=True)
         return job_id
