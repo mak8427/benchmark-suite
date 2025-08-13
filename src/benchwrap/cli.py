@@ -106,7 +106,7 @@ def old_list(start: str, show_dir: bool) -> None:
 @benchwrap.command("list")
 def _list():
     """List available benchmarks (built-in and user)."""
-    root = res.files(BENCH_ROOT)
+    root = res.files(EXECUTORS_PKG)
     pkg_modules = [
         p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
     ]
@@ -142,7 +142,7 @@ def _list():
 @click.pass_context
 def run(ctx, name, partition):
     """Run a benchmark (built-in module, user .py, or user directory with job_start.sh)."""
-    root = res.files(BENCH_PKG)
+    root = res.files(EXECUTORS_PKG)
     pkg_modules = [
         p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
     ]
