@@ -117,7 +117,6 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
     int
         Slurm job ID raised by ``sbatch``.
     """
-    bench_name = "." + bench_name
     script_res = res.files("benchwrap.benchmarks") / bench_name / "job_start.sh"
     with res.as_file(script_res) as script_path:
         _make_executable(script_path)
