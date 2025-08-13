@@ -11,11 +11,12 @@ set -euo pipefail
 module load likwid
 source activate energy
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DEST="$HOME/.local/share/benchwrap/bench_name_${SLURM_JOB_ID}"
+
+#Create job dir
+DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
-cd "${SLURM_TMPDIR:?need SLURM_TMPDIR}"
 
-
+#Trap And start Jobs
 trap 'rsync -a timeline_*.csv "$DEST/" 2>/dev/null || true' EXIT
 srun --cpu-bind=cores likwid-perfctr -g FLOPS_DP -t 200ms -O -o "timeline_${SLURM_JOB_ID}.csv" \
        python3 -u benchmarks/.flops_matrix_mul/workload.py
