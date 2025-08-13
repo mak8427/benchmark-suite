@@ -11,12 +11,16 @@ set -euo pipefail
 module load likwid
 conda activate energy
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-DEST="$HOME/.local/share/likwid/${SLURM_JOB_ID}"
+DEST="$HOME/.local/share/benchwrap/bench_name_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
 cd "${SLURM_TMPDIR:?need SLURM_TMPDIR}"
 
 
 trap 'rsync -a timeline_*.csv "$DEST/" 2>/dev/null || true' EXIT
 srun --cpu-bind=cores likwid-perfctr -g FLOPS_DP -t 200ms -O -o "timeline_${SLURM_JOB_ID}.csv" \
-  python3 -u "$SLURM_SUBMIT_DIR/benchmarks/.flops_matrix_mul/workload.py"
+       python3 -u benchmarks/.flops_matrix_mul/workload.py
+
 echo "Results -> $DEST"
+
+
+
