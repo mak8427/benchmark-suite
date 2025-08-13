@@ -31,7 +31,7 @@ def run_slurm_job(bench_name: str, partition: str):
 
         job_id = sbatch_launch(bench_name, partition)
     except subprocess.CalledProcessError as e:
-        print("sbatch stderr:\n", e.stderr.decode(), "\n---")
+        print("sbatch stderr:\n", e.stderr, "\n---")
         raise
 
     if partition == "":
