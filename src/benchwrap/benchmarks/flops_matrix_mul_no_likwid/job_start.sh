@@ -9,7 +9,7 @@
 
 set -euo pipefail
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-source active test
+source activate test
 #Create job dir
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
