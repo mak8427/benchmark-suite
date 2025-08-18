@@ -14,8 +14,7 @@ source activate test
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
 
-srun --cpu-bind=cores \
-  python3 -u -m benchwrap.benchmarks.flops_matrix_mul.workload 1>&2
+srun python3 -u -m benchwrap.benchmarks.flops_matrix_mul.workload 1>&2
 
 
 echo "Results -> $DEST"
