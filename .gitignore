@@ -4,7 +4,7 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .ipynb_checkpoints/
-
+.idea
 
 # Packaging
 build/
