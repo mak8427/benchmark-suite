@@ -9,7 +9,11 @@
 
 set -euo pipefail
 module load miniforge3
-source activate test
+
+set +u
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate test
+set -u
 
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
@@ -18,8 +22,7 @@ export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
 
-srun python3 benchwrap.benchmarks.flops_matrix_mul.workload 1>&2
-
+python3 -u -m benchwrap.benchmarks.flops_matrix_mul_mini.workload 1>&2
 
 
 
