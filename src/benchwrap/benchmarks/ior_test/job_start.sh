@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name = swarm_manager
+#SBATCH --job-name=swarm_manager
 #SBATCH --nodes=1
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
