@@ -12,7 +12,7 @@ module load miniforge3
 
 set +u
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate test
+source activate test
 set -u
 
 
