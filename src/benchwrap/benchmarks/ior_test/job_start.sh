@@ -6,7 +6,7 @@
 #SBATCH --acctg-freq=energy=1
 
 set -euo pipefail
-salloc -N10 --exclusive
+salloc -N2 --exclusive
 module load mpi
 
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
