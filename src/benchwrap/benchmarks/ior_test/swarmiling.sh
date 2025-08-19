@@ -14,10 +14,6 @@ cd "$DEST"
 /home/davide.mattioli/energy//bin/python3 -u -m benchwrap.benchmarks.ior_test.launcher 1>&2
 
 
-CONF_DIR="$DEST/ior_inis"
-for cfg in "$CONF_DIR"/*.ini; do
-  echo cfg
-done
 
 
 echo "$(ls)"
