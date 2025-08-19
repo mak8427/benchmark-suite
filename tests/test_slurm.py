@@ -216,7 +216,12 @@ def test_cli_slurm_commands_exist():
     assert len(modules) > 0
 
     # Should include known SLURM benchmarks
-    expected_benchmarks = ["mem_bandwidth", "flops_matrix_mul", "cache_test", "flops_matrix_mul_mini"]
+    expected_benchmarks = [
+        "mem_bandwidth",
+        "flops_matrix_mul",
+        "cache_test",
+        "flops_matrix_mul_mini",
+    ]
     for benchmark in expected_benchmarks:
         assert (
             benchmark in modules
@@ -228,88 +233,93 @@ class TestFlopsMatrixMulMini:
 
     def test_flops_matrix_mul_mini_mocked_execution(self, tmp_path, monkeypatch):
         """Test running flops_matrix_mul_mini with mocked SLURM commands."""
+        import os
         import subprocess
         import tempfile
-        import os
         from unittest.mock import MagicMock, call
-        
+
         # Create temporary home directory for outputs
         fake_home = tmp_path / "fake_home"
         fake_home.mkdir()
         monkeypatch.setenv("HOME", str(fake_home))
-        
+
         # Create the benchwrap job output directory
         job_dir = fake_home / ".local" / "share" / "benchwrap"
         job_dir.mkdir(parents=True)
-        
+
         # Mock job ID
         mock_job_id = "12345"
-        
+
         # Track subprocess calls
         subprocess_calls = []
         original_run = subprocess.run
-        
+
         def mock_subprocess_run(cmd, **kwargs):
             subprocess_calls.append((cmd, kwargs))
-            
+
             if cmd[0] == "sbatch":
                 # Mock sbatch response - return job ID
                 mock_result = MagicMock()
                 mock_result.stdout = f"{mock_job_id};cluster\n"
                 mock_result.returncode = 0
                 # Create the job directory that sbatch_launch expects
-                job_output_dir = fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+                job_output_dir = (
+                    fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+                )
                 job_output_dir.mkdir(parents=True, exist_ok=True)
                 return mock_result
-            
+
             elif cmd[0] == "scontrol" and "release" in cmd:
                 # Mock scontrol release - just succeed
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-            
+
             elif cmd[0] == "squeue":
                 # Mock squeue - job not in queue (completed)
                 mock_result = MagicMock()
                 mock_result.stdout = ""  # Empty means job completed
                 mock_result.returncode = 0
                 return mock_result
-            
+
             elif cmd[0] == "python" and "-m" in cmd:
                 # Mock the actual benchmark execution
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-            
+
             else:
                 # For any other commands, call the original
                 return original_run(cmd, **kwargs)
-        
+
         monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
-        
+
         # Import and run the benchmark
-        from benchwrap.executors.flops_matrix_mul_mini import main
-        
         # Mock sys.argv to simulate command line arguments
         import sys
+
+        from benchwrap.executors.flops_matrix_mul_mini import main
+
         original_argv = sys.argv
         try:
             sys.argv = ["flops_matrix_mul_mini", "--partition", "test-partition"]
             main()
         finally:
             sys.argv = original_argv
-        
+
         # Verify that sbatch was called with correct parameters
         sbatch_calls = [call for call in subprocess_calls if call[0][0] == "sbatch"]
-        assert len(sbatch_calls) >= 1, f"Expected sbatch call, got calls: {subprocess_calls}"
-        
+        assert (
+            len(sbatch_calls) >= 1
+        ), f"Expected sbatch call, got calls: {subprocess_calls}"
+
         sbatch_cmd = sbatch_calls[0][0]
         assert "sbatch" in sbatch_cmd
         assert "--parsable" in sbatch_cmd
         assert "--hold" in sbatch_cmd
         assert "-p" in sbatch_cmd
         assert "test-partition" in sbatch_cmd
-        
+
         # Verify scontrol release was called
         scontrol_calls = [call for call in subprocess_calls if call[0][0] == "scontrol"]
         assert len(scontrol_calls) >= 1
@@ -320,65 +330,71 @@ class TestFlopsMatrixMulMini:
 
     def test_flops_matrix_mul_mini_job_output_verification(self, tmp_path, monkeypatch):
         """Test that job outputs are created in the correct location."""
-        import subprocess
         import os
+        import subprocess
         from unittest.mock import MagicMock
-        
+
         # Create temporary home directory
         fake_home = tmp_path / "fake_home"
         fake_home.mkdir()
         monkeypatch.setenv("HOME", str(fake_home))
-        
+
         # Mock job ID
         mock_job_id = "67890"
-        
+
         def mock_subprocess_run(cmd, **kwargs):
             if cmd[0] == "sbatch":
                 mock_result = MagicMock()
                 mock_result.stdout = f"{mock_job_id};cluster\n"
                 mock_result.returncode = 0
-                
+
                 # Create expected output directory and files
-                job_output_dir = fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+                job_output_dir = (
+                    fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+                )
                 job_output_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 # Create mock output files
                 output_file = job_output_dir / f"slurm-{mock_job_id}.out"
                 error_file = job_output_dir / f"slurm-{mock_job_id}.err"
-                
-                output_file.write_text(f"Job {mock_job_id} completed successfully\nResults -> {job_output_dir}\n")
+
+                output_file.write_text(
+                    f"Job {mock_job_id} completed successfully\nResults -> {job_output_dir}\n"
+                )
                 error_file.write_text("")  # No errors
-                
+
                 return mock_result
-            
+
             elif cmd[0] == "scontrol":
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-            
+
             else:
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-        
+
         monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
-        
+
         # Run the benchmark launcher function directly
         from benchwrap.executors.utils.benchmarks_func import sbatch_launch
-        
+
         job_id = sbatch_launch("flops_matrix_mul_mini", "test-partition")
-        
+
         # Verify job ID is returned
         assert job_id == int(mock_job_id)
-        
+
         # Verify output directory was created
-        expected_job_dir = fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+        expected_job_dir = (
+            fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+        )
         assert expected_job_dir.exists()
-        
+
         # Verify output files exist (if created by our mock)
         output_file = expected_job_dir / f"slurm-{mock_job_id}.out"
         error_file = expected_job_dir / f"slurm-{mock_job_id}.err"
-        
+
         if output_file.exists():
             content = output_file.read_text()
             assert f"Job {mock_job_id}" in content
@@ -388,12 +404,12 @@ class TestFlopsMatrixMulMini:
         """Test error handling when sbatch fails."""
         import subprocess
         from unittest.mock import MagicMock
-        
+
         # Create temporary home directory
         fake_home = tmp_path / "fake_home"
         fake_home.mkdir()
         monkeypatch.setenv("HOME", str(fake_home))
-        
+
         def mock_subprocess_run_failure(cmd, **kwargs):
             if cmd[0] == "sbatch":
                 # Simulate sbatch failure
@@ -404,30 +420,30 @@ class TestFlopsMatrixMulMini:
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-        
+
         monkeypatch.setattr(subprocess, "run", mock_subprocess_run_failure)
-        
+
         # Test that the error is properly handled
         from benchwrap.executors.utils.benchmarks_func import sbatch_launch
-        
+
         with pytest.raises(subprocess.CalledProcessError) as exc_info:
             sbatch_launch("flops_matrix_mul_mini", "invalid-partition")
-        
+
         assert "Batch job submission failed" in str(exc_info.value.stderr)
 
     @pytest.mark.skipif(not has_slurm(), reason="SLURM not available")
     def test_flops_matrix_mul_mini_real_slurm_integration(self, tmp_path):
         """Test with real SLURM if available - integration test."""
+        import os
         import subprocess
         import time
-        import os
-        
+
         # This test runs only if SLURM is actually available
         # It submits a real job but makes it very lightweight
-        
         # Create a minimal test script that mimics the benchmark
         test_script = tmp_path / "mini_test.sh"
-        test_script.write_text("""#!/bin/bash
+        test_script.write_text(
+            """#!/bin/bash
 #SBATCH --job-name=test-flops-mini
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -438,9 +454,10 @@ echo "Starting mini benchmark test"
 echo "Job ID: $SLURM_JOB_ID"
 python3 -c "import numpy as np; a = np.random.random((100,100)); b = np.random.random((100,100)); c = a @ b; print(f'Completed matrix multiply: norm={np.linalg.norm(c):.2e}')"
 echo "Mini test completed"
-""")
+"""
+        )
         test_script.chmod(0o755)
-        
+
         # Submit the job
         result = subprocess.run(
             ["sbatch", "--parsable", str(test_script)],
@@ -449,7 +466,7 @@ echo "Mini test completed"
             check=True,
         )
         job_id = result.stdout.strip().split(";")[0]
-        
+
         # Wait for job to complete (with timeout)
         timeout = 120  # 2 minutes should be enough for a simple test
         elapsed = 0
@@ -461,9 +478,11 @@ echo "Mini test completed"
                 break
             time.sleep(2)
             elapsed += 2
-        
-        assert elapsed < timeout, f"Job {job_id} did not complete within {timeout} seconds"
-        
+
+        assert (
+            elapsed < timeout
+        ), f"Job {job_id} did not complete within {timeout} seconds"
+
         # Check if output file was created (SLURM default location)
         # This is a basic verification that the job ran
         print(f"Test job {job_id} completed successfully")
@@ -472,54 +491,57 @@ echo "Mini test completed"
         """Test the full CLI command 'benchwrap run flops_matrix_mul_mini' with mocked SLURM."""
         import subprocess
         from unittest.mock import MagicMock
+
         from click.testing import CliRunner
-        
+
         # Create temporary home directory
         fake_home = tmp_path / "fake_home"
         fake_home.mkdir()
         monkeypatch.setenv("HOME", str(fake_home))
-        
+
         # Mock job ID
         mock_job_id = "98765"
-        
+
         def mock_subprocess_run(cmd, **kwargs):
             if cmd[0] == "sbatch":
                 mock_result = MagicMock()
                 mock_result.stdout = f"{mock_job_id};cluster\n"
                 mock_result.returncode = 0
-                
+
                 # Create expected output directory
-                job_output_dir = fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+                job_output_dir = (
+                    fake_home / ".local" / "share" / "benchwrap" / f"job_{mock_job_id}"
+                )
                 job_output_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 return mock_result
-            
+
             elif cmd[0] == "scontrol":
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-            
+
             elif cmd[0] == "python" and "-m" in cmd and "flops_matrix_mul_mini" in cmd:
                 # This is the actual call to the executor
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-            
+
             else:
                 mock_result = MagicMock()
                 mock_result.returncode = 0
                 return mock_result
-        
+
         monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
-        
+
         # Test CLI command
         from benchwrap.cli import run
-        
+
         runner = CliRunner()
         result = runner.invoke(run, ["flops_matrix_mul_mini", "test-partition"])
-        
+
         # Check that the command executed without errors
         assert result.exit_code == 0, f"CLI command failed: {result.output}"
-        
+
         # Check that the expected output mentions the benchmark
         assert "flops_matrix_mul_mini" in result.output or "running" in result.output
