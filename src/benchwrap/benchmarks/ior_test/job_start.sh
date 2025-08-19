@@ -6,7 +6,7 @@
 #SBATCH --acctg-freq=energy=1
 
 set -euo pipefail
-salloc -N2
+salloc -N10 --exclusive
 module load mpi
 
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
@@ -19,7 +19,7 @@ cd "$DEST"
 CONF_DIR="$DEST/ior_inis"
 for cfg in "$CONF_DIR"/*.ini; do
   echo"$(findmnt -T . -o TARGET,FSTYPE,SOURCE)"
-  mpirun -np 4 /home/davide.mattioli/my_beegfs/_BEEGFS/davide.mattioli/io500-small-exercise/io500/bin/ior -f "$cfg"
+  srun -np 2 /home/davide.mattioli/my_beegfs/_BEEGFS/davide.mattioli/io500-small-exercise/io500/bin/ior -f "$cfg"
 done
 
 
