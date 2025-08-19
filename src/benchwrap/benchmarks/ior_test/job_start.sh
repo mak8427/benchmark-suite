@@ -14,7 +14,7 @@ mkdir -p "$DEST"
 
 /home/davide.mattioli/energy//bin/python3 -u -m benchwrap.benchmarks.ior_test.launcher 1>&2
 
-echo $(ls)
+echo "$(ls)"
 
 
 

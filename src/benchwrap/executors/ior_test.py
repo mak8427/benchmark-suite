@@ -14,7 +14,7 @@ def main():
 
     except:
         print("No partition specified")
-        run_slurm_job(bench_name="ior_test", partition=None)
+        run_slurm_job(bench_name="ior_test", partition="None")
 
 if __name__ == "__main__":
     main()
