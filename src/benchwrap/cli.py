@@ -98,7 +98,7 @@ def old_list(start: str, show_dir: bool) -> None:
 
     elif show_dir and choice in string.ascii_lowercase[: len(dirs)]:
         idx = string.ascii_lowercase.index(choice)
-        _list.callback(str(dirs[idx]), show_dir)  # recursive dive
+        old_list.callback(str(dirs[idx]), show_dir)  # recursive dive
     else:
         click.echo("Invalid input!")
 
