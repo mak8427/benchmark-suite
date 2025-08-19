@@ -152,7 +152,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r src/requirements.txt
-          pip install build twine
+          pip install build twine pytest
 
       - name: Build package
         run: |
@@ -162,9 +162,120 @@ jobs:
         run: |
           benchwrap list
 
-      - name: test run
+      - name: Create test SLURM job
         run: |
-          benchwrap run mem_bandwidth
+          # Create a simple test benchmark for CI
+          mkdir -p /tmp/slurm_test
+          cat > /tmp/slurm_test/simple_benchmark.py << 'EOF'
+          #!/usr/bin/env python3
+          import time
+          import os
+          
+          print("Starting simple benchmark test...")
+          print(f"Job ID: {os.environ.get('SLURM_JOB_ID', 'N/A')}")
+          print(f"Node list: {os.environ.get('SLURM_JOB_NODELIST', 'N/A')}")
+          
+          # Simple computation to simulate work
+          result = sum(i**2 for i in range(1000))
+          print(f"Computation result: {result}")
+          
+          # Simulate some processing time
+          time.sleep(2)
+          
+          print("Benchmark test completed successfully")
+          EOF
+          
+          chmod +x /tmp/slurm_test/simple_benchmark.py
+
+      - name: Test SLURM job submission and execution
+        run: |
+          # Create a simple SLURM script for testing
+          cat > /tmp/test_job.sh << 'EOF'
+          #!/bin/bash
+          #SBATCH --job-name=ci-test
+          #SBATCH --nodes=1
+          #SBATCH --ntasks=1
+          #SBATCH --cpus-per-task=1
+          #SBATCH --time=00:02:00
+          #SBATCH --output=/tmp/slurm_output_%j.out
+          #SBATCH --error=/tmp/slurm_error_%j.err
+          
+          echo "SLURM job started at $(date)"
+          echo "Job ID: $SLURM_JOB_ID"
+          echo "Node: $SLURM_JOB_NODELIST"
+          
+          python3 /tmp/slurm_test/simple_benchmark.py
+          
+          echo "SLURM job completed at $(date)"
+          EOF
+          
+          chmod +x /tmp/test_job.sh
+          
+          # Submit the job and capture job ID
+          echo "Submitting SLURM test job..."
+          JOB_ID=$(sbatch --parsable /tmp/test_job.sh)
+          echo "Submitted job with ID: $JOB_ID"
+          
+          # Wait for job to complete (with timeout)
+          echo "Waiting for job to complete..."
+          timeout=60
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if squeue -j $JOB_ID 2>/dev/null | grep -q $JOB_ID; then
+              echo "Job $JOB_ID is still running..."
+              sleep 5
+              elapsed=$((elapsed + 5))
+            else
+              echo "Job $JOB_ID has completed"
+              break
+            fi
+          done
+          
+          if [ $elapsed -ge $timeout ]; then
+            echo "ERROR: Job did not complete within timeout"
+            squeue -j $JOB_ID || echo "Job not found in queue"
+            exit 1
+          fi
+          
+          # Check job status
+          echo "Checking job status..."
+          sacct -j $JOB_ID --format=JobID,JobName,State,ExitCode,Elapsed,CPUTime || echo "sacct failed, continuing..."
+          
+          # Verify output files exist and contain expected content
+          if [ -f "/tmp/slurm_output_${JOB_ID}.out" ]; then
+            echo "=== Job Output ==="
+            cat "/tmp/slurm_output_${JOB_ID}.out"
+          else
+            echo "ERROR: Output file not found"
+            exit 1
+          fi
+          
+          if [ -f "/tmp/slurm_error_${JOB_ID}.err" ]; then
+            echo "=== Job Errors ==="
+            cat "/tmp/slurm_error_${JOB_ID}.err"
+          fi
+          
+          # Verify the output contains expected content
+          if grep -q "Benchmark test completed successfully" "/tmp/slurm_output_${JOB_ID}.out"; then
+            echo "✓ SLURM job executed successfully and produced expected output"
+          else
+            echo "ERROR: Expected output not found in job output"
+            exit 1
+          fi
+
+      - name: Test benchmark suite SLURM integration
+        run: |
+          # Test that the benchmark suite can handle SLURM environments
+          echo "Testing benchmark suite SLURM detection..."
+          
+          # Test listing benchmarks
+          benchwrap list
+          
+          # Run SLURM-specific pytest tests
+          echo "Running SLURM integration tests..."
+          python -m pytest tests/test_slurm.py -v --tb=short
+          
+          echo "✓ SLURM integration tests completed"
 
 
 
