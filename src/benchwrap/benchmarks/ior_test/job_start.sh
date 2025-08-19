@@ -16,7 +16,7 @@ cd "$DEST"
 
 CONF_DIR="$DEST/ior_inis"
 for cfg in "$CONF_DIR"/*.ini; do
-  echo cfg
+  echo $cfg
 done
 
 
