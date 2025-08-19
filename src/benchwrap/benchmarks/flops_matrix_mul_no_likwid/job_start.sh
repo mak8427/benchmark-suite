@@ -8,7 +8,7 @@
 #SBATCH --acctg-freq=energy=1
 
 set -euo pipefail
-module load miniforge3
+
 
 conda activate /home/davide.mattioli/energy
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
