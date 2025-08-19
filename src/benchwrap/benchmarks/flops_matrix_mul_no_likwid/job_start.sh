@@ -10,7 +10,7 @@
 set -euo pipefail
 
 
-conda activate /home/davide.mattioli/energy
+source activate /home/davide.mattioli/energy
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 
 
