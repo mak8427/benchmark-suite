@@ -16,5 +16,6 @@ def main():
         print("No partition specified")
         run_slurm_job(bench_name="ior_test", partition="None")
 
+
 if __name__ == "__main__":
     main()
