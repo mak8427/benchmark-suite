@@ -15,7 +15,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 source activate test
 set -u
 
-
+source activate test
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 
 
