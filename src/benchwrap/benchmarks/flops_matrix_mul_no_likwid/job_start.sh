@@ -8,6 +8,7 @@
 #SBATCH --acctg-freq=energy=1
 
 set -euo pipefail
+module load miniforge3
 source activate test
 
 
