@@ -216,7 +216,12 @@ def test_cli_slurm_commands_exist():
     assert len(modules) > 0
 
     # Should include known SLURM benchmarks
-    expected_benchmarks = ["mem_bandwidth", "flops_matrix_mul", "cache_test"]
+    expected_benchmarks = [
+        "mem_bandwidth",
+        "flops_matrix_mul",
+        "cache_test",
+        "flops_matrix_mul_mini",
+    ]
     for benchmark in expected_benchmarks:
         assert (
             benchmark in modules
