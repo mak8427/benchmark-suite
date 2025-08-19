@@ -277,5 +277,125 @@ jobs:
           
           echo "✓ SLURM integration tests completed"
 
+      - name: Test flops_matrix_mul_mini benchmark with SLURM
+        run: |
+          # Test the specific flops_matrix_mul_mini benchmark
+          echo "Testing flops_matrix_mul_mini benchmark..."
+          
+          # Create a lightweight version of the benchmark for CI testing
+          mkdir -p /tmp/benchwrap_ci_test
+          cat > /tmp/benchwrap_ci_test/mini_flops_test.sh << 'EOF'
+          #!/bin/bash
+          #SBATCH --job-name=flops-mini-ci
+          #SBATCH --nodes=1
+          #SBATCH --ntasks=1
+          #SBATCH --cpus-per-task=1
+          #SBATCH --time=00:03:00
+          #SBATCH --output=/tmp/flops_output_%j.out
+          #SBATCH --error=/tmp/flops_error_%j.err
+          
+          echo "Starting flops_matrix_mul_mini CI test at $(date)"
+          echo "Job ID: $SLURM_JOB_ID"
+          echo "Node: $SLURM_JOB_NODELIST"
+          echo "CPU cores: $SLURM_CPUS_PER_TASK"
+          
+          # Run a small version of the matrix multiplication test
+          python3 -c "
+          import numpy as np
+          import time
+          import os
+          
+          print('Starting mini FLOPS test...')
+          n = 500  # Much smaller than the 12,000 in the real benchmark
+          print(f'Creating {n}x{n} matrices for CI test')
+          
+          a = np.random.random((n, n))
+          b = np.random.random((n, n))
+          
+          print(f'Multiplying on {os.cpu_count()} logical cores...')
+          start = time.time()
+          c = a @ b
+          duration = time.time() - start
+          
+          flops = 2 * n**3 / duration / 1e9
+          norm = np.linalg.norm(c)
+          
+          print(f'GEMM completed in {duration:.3f}s → {flops:.2f} GFLOP/s')
+          print(f'Result Frobenius norm: {norm:.3e}')
+          print('Mini FLOPS test completed successfully')
+          "
+          
+          echo "flops_matrix_mul_mini CI test completed at $(date)"
+          EOF
+          
+          chmod +x /tmp/benchwrap_ci_test/mini_flops_test.sh
+          
+          # Submit the benchmark test job
+          echo "Submitting flops_matrix_mul_mini test job..."
+          FLOPS_JOB_ID=$(sbatch --parsable /tmp/benchwrap_ci_test/mini_flops_test.sh)
+          echo "Submitted flops benchmark job with ID: $FLOPS_JOB_ID"
+          
+          # Monitor job status
+          echo "Monitoring flops benchmark job..."
+          timeout=120  # 2 minutes should be enough
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if squeue -j $FLOPS_JOB_ID 2>/dev/null | grep -q $FLOPS_JOB_ID; then
+              echo "Flops job $FLOPS_JOB_ID is still running... (${elapsed}s elapsed)"
+              sleep 10
+              elapsed=$((elapsed + 10))
+            else
+              echo "Flops job $FLOPS_JOB_ID has completed"
+              break
+            fi
+          done
+          
+          if [ $elapsed -ge $timeout ]; then
+            echo "ERROR: Flops job did not complete within timeout"
+            squeue -j $FLOPS_JOB_ID || echo "Job not found in queue"
+            exit 1
+          fi
+          
+          # Check job completion status
+          echo "Checking flops job completion..."
+          sacct -j $FLOPS_JOB_ID --format=JobID,JobName,State,ExitCode,Elapsed || echo "sacct not available"
+          
+          # Verify output files and content
+          if [ -f "/tmp/flops_output_${FLOPS_JOB_ID}.out" ]; then
+            echo "=== Flops Job Output ==="
+            cat "/tmp/flops_output_${FLOPS_JOB_ID}.out"
+            echo "========================="
+            
+            # Verify expected output
+            if grep -q "Mini FLOPS test completed successfully" "/tmp/flops_output_${FLOPS_JOB_ID}.out" && \
+               grep -q "GFLOP/s" "/tmp/flops_output_${FLOPS_JOB_ID}.out"; then
+              echo "✓ flops_matrix_mul_mini benchmark executed successfully"
+            else
+              echo "ERROR: Expected benchmark output not found"
+              exit 1
+            fi
+          else
+            echo "ERROR: Flops benchmark output file not found"
+            ls -la /tmp/flops_*
+            exit 1
+          fi
+          
+          # Check for errors
+          if [ -f "/tmp/flops_error_${FLOPS_JOB_ID}.err" ]; then
+            error_content=$(cat "/tmp/flops_error_${FLOPS_JOB_ID}.err")
+            if [ -n "$error_content" ]; then
+              echo "=== Flops Job Errors ==="
+              echo "$error_content"
+              echo "========================"
+              # Don't fail on warnings, only on actual errors
+              if echo "$error_content" | grep -i "error\|exception\|traceback"; then
+                echo "ERROR: Found errors in benchmark execution"
+                exit 1
+              fi
+            fi
+          fi
+          
+          echo "✓ flops_matrix_mul_mini benchmark test completed successfully"
+
 
 
