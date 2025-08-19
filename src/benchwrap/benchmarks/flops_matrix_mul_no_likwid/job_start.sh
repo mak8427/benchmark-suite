@@ -10,15 +10,11 @@
 set -euo pipefail
 module load miniforge3
 
-source activate test
+conda activate /home/davide.mattioli/energy
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 
 
-python - <<'PY'
-import sys, site
-print("exe:", sys.executable)
-print("paths:", *sys.path[:3], sep="\n  ")
-PY
+
 
 
 #Create job dir
