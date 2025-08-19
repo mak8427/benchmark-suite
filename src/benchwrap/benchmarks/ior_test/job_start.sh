@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=swarm_manager
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1
 
 set -euo pipefail
-
+salloc -N2
 module load mpi
 
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
