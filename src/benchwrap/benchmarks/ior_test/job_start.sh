@@ -18,6 +18,7 @@ cd "$DEST"
 
 CONF_DIR="$DEST/ior_inis"
 for cfg in "$CONF_DIR"/*.ini; do
+  echo"$(findmnt -T . -o TARGET,FSTYPE,SOURCE)"
   mpirun -np 4 /home/davide.mattioli/my_beegfs/_BEEGFS/davide.mattioli/io500-small-exercise/io500/bin/ior -f "$cfg"
 done
 
