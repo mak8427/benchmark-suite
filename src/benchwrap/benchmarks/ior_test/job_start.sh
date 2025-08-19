@@ -10,6 +10,7 @@ set -euo pipefail
 DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
 
+cd "$DEST"
 /home/davide.mattioli/energy//bin/python3 -u -m benchwrap.benchmarks.ior_test.launcher 1>&2
 
 echo "$(ls)"
