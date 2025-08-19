@@ -28,5 +28,5 @@ for ts, bs in combinations:
 
     with open(f"ior_ts_{ts}_bs_{bs}.ini", "w") as f:
         f.write(
-            f"[global]\napi = POSIX \ntransferSize = {ts}\nblockSize = {bs}\nrepetitions = 1"
+            f"[global]\napi = POSIX \ntransferSize = {ts}\nblockSize = {bs}\nrepetitions = 10"
         )
