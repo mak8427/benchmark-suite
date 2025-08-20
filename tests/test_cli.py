@@ -9,7 +9,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from benchwrap.core import add_impl
+from src.benchwrap.core import add_impl
 
 ROOT = pathlib.Path(__file__).parent.parent.resolve()
 SRC = ROOT / "src"

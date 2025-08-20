@@ -2,7 +2,7 @@ import pathlib
 import sys
 from pathlib import Path
 
-from benchwrap.core import add_impl
+from src.benchwrap.core import add_impl
 
 
 def test_add_impl(tmp_path):
