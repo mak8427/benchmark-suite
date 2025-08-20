@@ -15,7 +15,7 @@ mkdir -p "$DEST"
 IO500="$HOME/.local/share/benchwrap/benchmarks/io500"
 cd "$DEST"
 
-srun -n 4 "$IO500/io500.sh" "$IO500/config-minimal.ini"
+srun "$IO500/io500.sh" "$IO500/config-minimal.ini"
 
 echo "$(ls)"
 
