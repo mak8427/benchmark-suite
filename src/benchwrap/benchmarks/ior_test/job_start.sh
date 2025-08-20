@@ -1,6 +1,5 @@
 #!/bin/bash
 #SBATCH --job-name=swarm_manager
-#SBATCH --nodes=2
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1

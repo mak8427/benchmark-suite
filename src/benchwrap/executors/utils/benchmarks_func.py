@@ -122,7 +122,13 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
     Raises:
         Various exceptions are raised depending on the specific subprocess execution or filesystem operations.
     """
+    #Cmd definition
     script_res = res.files("benchwrap.benchmarks") / bench_name / "job_start.sh"
+    os.makedirs(
+            f"{os.environ['HOME']}/.local/share/benchwrap/jobs",
+            exist_ok=True,
+    )
+
     with res.as_file(script_res) as script_path:
         _make_executable(script_path)
 
@@ -135,12 +141,15 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
         # N of nodes
         cmd += [f"--nodes={nodes}"]
 
+        #Job name
+        cmd += [f"--job-name={bench_name}"]
+
         # Output and Error
         cmd += [
             "--output",
-            f"{os.environ['HOME']}/.local/share/benchwrap/job_%j/slurm-%j.out",
+            f"{os.environ['HOME']}/.local/share/benchwrap/jobs/job_%j/slurm-%j.out",
             "--error",
-            f"{os.environ['HOME']}/.local/share/benchwrap/job_%j/slurm-%j.err",
+            f"{os.environ['HOME']}/.local/share/benchwrap/jobs/job_%j/slurm-%j.err",
             str(script_path),
         ]
 
@@ -152,7 +161,7 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
 
         job_id = int(completed.stdout.strip().split(";")[0])
         os.makedirs(
-            f"{os.environ['HOME']}/.local/share/benchwrap/job_{job_id}",
+            f"{os.environ['HOME']}/.local/share/benchwrap/jobs/job_{job_id}",
             exist_ok=True,
         )
         subprocess.run(["scontrol", "release", str(job_id)], check=True)

@@ -1,9 +1,4 @@
 #!/bin/bash
-#SBATCH --job-name=likwid-flops
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=24
-#SBATCH --output=likwid-%j.out
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1

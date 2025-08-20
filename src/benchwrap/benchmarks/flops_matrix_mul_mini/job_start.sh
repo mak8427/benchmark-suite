@@ -1,8 +1,4 @@
 #!/bin/bash
-#SBATCH --job-name=flops_matrix_mul
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1
