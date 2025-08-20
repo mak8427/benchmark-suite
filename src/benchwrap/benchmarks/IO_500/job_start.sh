@@ -15,7 +15,7 @@ mkdir -p "$DEST"
 IO500="$HOME/.local/share/benchwrap/benchmarks/io500"
 cd "$DEST"
 
-mpirun -np 4 "$IO500/io500.sh" "$IO500/config-minimal.ini"
+mpiexec -np 4 "$IO500/io500.sh" "$IO500/config-minimal.ini"
 
 echo "$(ls)"
 
