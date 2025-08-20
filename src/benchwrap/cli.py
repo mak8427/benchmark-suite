@@ -136,7 +136,7 @@ def _list():
             click.echo(f"  - {d}  (dir)")
 
 
-python
+
 @benchwrap.command("run")
 @click.argument("name", required=False)
 @click.argument("partition", required=False)
