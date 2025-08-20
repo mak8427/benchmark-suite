@@ -12,7 +12,9 @@ def main():
         get_ior()
         assert check_ior() == True
 
-    p = argparse.ArgumentParser(description="Run FLOPS matrix multiplication benchmark via SLURM.")
+    p = argparse.ArgumentParser(
+        description="Run FLOPS matrix multiplication benchmark via SLURM."
+    )
     p.add_argument(
         "--partition",
         default=None,
@@ -20,7 +22,9 @@ def main():
     )
 
     p.add_argument(
-        "--nodes", "--n", "-n",
+        "--nodes",
+        "--n",
+        "-n",
         dest="nodes",
         type=int,
         default=1,
@@ -28,13 +32,11 @@ def main():
     )
     args = p.parse_args()
 
-
     run_slurm_job(
         bench_name="IO_500",
         partition=args.partition,
         nodes=args.nodes,
     )
-
 
 
 if __name__ == "__main__":

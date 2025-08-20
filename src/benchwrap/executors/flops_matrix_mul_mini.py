@@ -4,7 +4,9 @@ from .utils.benchmarks_func import *
 
 
 def main():
-    p = argparse.ArgumentParser(description="Run FLOPS matrix multiplication benchmark via SLURM.")
+    p = argparse.ArgumentParser(
+        description="Run FLOPS matrix multiplication benchmark via SLURM."
+    )
     p.add_argument(
         "--partition",
         default=None,
@@ -12,7 +14,9 @@ def main():
     )
 
     p.add_argument(
-        "--nodes", "--n", "-n",
+        "--nodes",
+        "--n",
+        "-n",
         dest="nodes",
         type=int,
         default=1,
@@ -20,13 +24,11 @@ def main():
     )
     args = p.parse_args()
 
-
     run_slurm_job(
         bench_name="flops_matrix_mul_mini",
         partition=args.partition,
         nodes=args.nodes,
     )
-
 
 
 if __name__ == "__main__":
