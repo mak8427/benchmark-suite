@@ -142,7 +142,7 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
         ]
 
         # N of nodes
-        cmd += ["--nodes", nodes]
+        cmd += ["--nodes=", nodes]
 
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
