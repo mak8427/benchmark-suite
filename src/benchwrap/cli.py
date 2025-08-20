@@ -136,7 +136,6 @@ def _list():
             click.echo(f"  - {d}  (dir)")
 
 
-
 @benchwrap.command("run")
 @click.argument("name", required=False)
 @click.argument("partition", required=False)
@@ -242,6 +241,7 @@ def run(ctx, name, partition, nodes, opt_partition, opt_nodes):
                 click.echo(f"  - {m}")
         else:
             click.echo("Invalid")
+
 
 @benchwrap.command()
 @click.argument("source", type=click.Path(exists=True))
