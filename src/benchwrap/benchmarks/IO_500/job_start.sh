@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=IO_5ẞẞ
+#SBATCH --job-name=IO_500
 #SBATCH --nodes=4
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
