@@ -18,12 +18,10 @@ cd "$DEST"
 
 CONF_DIR="$DEST/ior_inis"
 echo "$(findmnt -T . -o TARGET,FSTYPE,SOURCE)"
-cd /home/davide.mattioli/my_beegfs/_BEEGFS/davide.mattioli/io500
-echo "$(findmnt -T . -o TARGET,FSTYPE,SOURCE)"
 
 
 for cfg in "$CONF_DIR"/*.ini; do
-  mpirun -np 2 "$HOME/.local/share/benchwrap/benchmarks/" -f "$cfg"
+  mpirun -np 2 "$HOME/.local/share/benchwrap/benchmarks/io500/bin/ior" -f "$cfg"
 done
 
 
