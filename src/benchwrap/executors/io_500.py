@@ -31,6 +31,7 @@ def main():
         help="Number of nodes to request (default: 1).",
     )
     args = p.parse_args()
+    print(args)
 
     run_slurm_job(
         bench_name="IO_500",
