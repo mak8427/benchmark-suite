@@ -132,6 +132,10 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
         if partition:
             cmd += ["-p", partition]
 
+        # N of nodes
+        cmd += ["--nodes=", nodes]
+
+
         # Output and Error
         cmd += [
             "--output",
@@ -141,8 +145,7 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
             str(script_path),
         ]
 
-        # N of nodes
-        cmd += ["--nodes=", nodes]
+
 
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
