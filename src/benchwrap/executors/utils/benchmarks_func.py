@@ -130,7 +130,7 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
 
         # Partition
         if partition:
-            cmd += ["-p", partition]
+            cmd += [f"--partition={partition}"]
 
         # N of nodes
         cmd += [f"--nodes={nodes}" ]
@@ -144,7 +144,11 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
             str(script_path),
         ]
 
-        completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        try:
+            completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            print("STDERR:", e.stderr)
+            raise
 
         job_id = int(completed.stdout.strip().split(";")[0])
         os.makedirs(
