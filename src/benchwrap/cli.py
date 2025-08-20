@@ -136,12 +136,23 @@ def _list():
             click.echo(f"  - {d}  (dir)")
 
 
+python
 @benchwrap.command("run")
 @click.argument("name", required=False)
 @click.argument("partition", required=False)
+@click.argument("nodes", required=False)
+@click.option("-p", "--partition", "opt_partition", required=False, help="SLURM partition")
+@click.option("-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes")
 @click.pass_context
-def run(ctx, name, partition):
+def run(ctx, name, partition, nodes, opt_partition, opt_nodes):
     """Run a benchmark (built-in module, user .py, or user directory with job_start.sh)."""
+    import sys
+
+    # Prefer options over positional args if provided
+    partition = opt_partition if opt_partition is not None else partition
+    eff_nodes = opt_nodes if opt_nodes is not None else nodes
+
+    # Discover available modules
     root = res.files(EXECUTORS_PKG)
     pkg_modules = [
         p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
@@ -181,32 +192,52 @@ def run(ctx, name, partition):
         if not choice:
             return
 
+    # Try to find matching benchmark by prefix
+    matches = [n for n in all_names if n.startswith(choice)]
+    if len(matches) == 1:
+        choice = matches[0]
+
+    # Normalize nodes (optional)
+    normalized_nodes = None
+    if eff_nodes is not None and str(eff_nodes).strip() != "":
+        try:
+            normalized_nodes = int(str(eff_nodes).strip())
+        except ValueError:
+            click.echo(f"[warn] Ignoring invalid nodes value: {eff_nodes}")
+            normalized_nodes = None
+
+    # Helper to append common args
+    def extend_slurm_args(cmd: list) -> list:
+        if partition:
+            cmd.extend(["--partition", str(partition)])
+        if normalized_nodes is not None:
+            cmd.extend(["--nodes", str(normalized_nodes)])
+        return cmd
+
     # Resolve and execute
     if choice in pkg_modules:
         click.echo(f"▶ running {BENCH_PKG}.{choice}")
-
         modname = f"{EXECUTORS_PKG}.{choice}"
-        if partition:
-            subprocess.run(["python", "-m", modname, "--partition", partition])
-        else:
-            subprocess.run(["python", "-m", modname])
+        cmd = [sys.executable, "-m", modname]
+        subprocess.run(extend_slurm_args(cmd))
 
     elif choice in user_py:
         target = pathlib.Path(USER_ROOT) / f"{choice}.py"
         click.echo(f"▶ running user py {target}")
-
-        if partition:
-            subprocess.run(["python", str(target), "--partition", partition])
-        else:
-            subprocess.run(["python", str(target)])
+        cmd = [sys.executable, str(target)]
+        subprocess.run(extend_slurm_args(cmd))
 
     elif choice in user_dirs:
         script = pathlib.Path(USER_ROOT) / choice / "job_start.sh"
         click.echo(f"▶ running {script}")
         subprocess.run(["bash", str(script)])
     else:
-        click.echo("Invalid")
-
+        if matches and len(matches) > 1:
+            click.echo("Ambiguous name. Did you mean one of:")
+            for m in matches:
+                click.echo(f"  - {m}")
+        else:
+            click.echo("Invalid")
 
 @benchwrap.command()
 @click.argument("source", type=click.Path(exists=True))
