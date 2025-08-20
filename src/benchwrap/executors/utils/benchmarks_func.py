@@ -143,11 +143,14 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
 
 
 def check_ior():
-    if os.path.exists(f"{os.environ["HOME"]}/.local/share/benchwrap/benchmarks/io500/bin/ior"):
+    if os.path.exists(
+        f"{os.environ["HOME"]}/.local/share/benchwrap/benchmarks/io500/bin/ior"
+    ):
         return True
     else:
         print("No ior found")
         return False
+
 
 def check_io500():
     if os.path.exists(f"{os.environ["HOME"]}/.local/share/benchwrap/benchmarks/io500"):
@@ -156,13 +159,13 @@ def check_io500():
         print("No io500 found")
         return False
 
+
 def get_ior():
 
     assert check_mpi() == True
     print("Compiling ior")
     os.chdir(f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks/io500")
-    subprocess.run(["bash" ,"prepare.sh"])
-
+    subprocess.run(["bash", "prepare.sh"])
 
 
 def get_io500():
