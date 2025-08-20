@@ -137,12 +137,18 @@ def _list():
 
 
 python
+
+
 @benchwrap.command("run")
 @click.argument("name", required=False)
 @click.argument("partition", required=False)
 @click.argument("nodes", required=False)
-@click.option("-p", "--partition", "opt_partition", required=False, help="SLURM partition")
-@click.option("-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes")
+@click.option(
+    "-p", "--partition", "opt_partition", required=False, help="SLURM partition"
+)
+@click.option(
+    "-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes"
+)
 @click.pass_context
 def run(ctx, name, partition, nodes, opt_partition, opt_nodes):
     """Run a benchmark (built-in module, user .py, or user directory with job_start.sh)."""
@@ -238,6 +244,7 @@ def run(ctx, name, partition, nodes, opt_partition, opt_nodes):
                 click.echo(f"  - {m}")
         else:
             click.echo("Invalid")
+
 
 @benchwrap.command()
 @click.argument("source", type=click.Path(exists=True))
