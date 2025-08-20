@@ -157,6 +157,8 @@ def check_io500():
         return False
 
 def get_ior():
+
+    assert check_mpi() == True
     print("Compiling ior")
     os.chdir(f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks/io500")
     subprocess.run(["bash" ,"prepare.sh"])
@@ -166,3 +168,14 @@ def get_ior():
 def get_io500():
     os.chdir(f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks")
     subprocess.run(["git", "clone", "https://github.com/IO500/io500.git"])
+
+def check_mpi():
+    try:
+        subprocess.run(["mpirun", "--version"], check=True, capture_output=True)
+        return True
+    except FileNotFoundError:
+        print("MPI compiler not installed")
+        return False
+    except subprocess.CalledProcessError:
+        print("MPI compiler present but not functional")
+        return False
