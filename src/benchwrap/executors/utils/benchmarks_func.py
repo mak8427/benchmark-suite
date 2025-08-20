@@ -122,11 +122,11 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
     Raises:
         Various exceptions are raised depending on the specific subprocess execution or filesystem operations.
     """
-    #Cmd definition
+    # Cmd definition
     script_res = res.files("benchwrap.benchmarks") / bench_name / "job_start.sh"
     os.makedirs(
-            f"{os.environ['HOME']}/.local/share/benchwrap/jobs",
-            exist_ok=True,
+        f"{os.environ['HOME']}/.local/share/benchwrap/jobs",
+        exist_ok=True,
     )
 
     with res.as_file(script_res) as script_path:
@@ -141,7 +141,7 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
         # N of nodes
         cmd += [f"--nodes={nodes}"]
 
-        #Job name
+        # Job name
         cmd += [f"--job-name={bench_name}"]
 
         # Output and Error
