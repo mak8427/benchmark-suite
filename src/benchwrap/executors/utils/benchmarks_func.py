@@ -135,7 +135,6 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
         # N of nodes
         cmd += [f"--nodes={nodes}" ]
 
-
         # Output and Error
         cmd += [
             "--output",
@@ -144,8 +143,6 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
             f"{os.environ['HOME']}/.local/share/benchwrap/job_%j/slurm-%j.err",
             str(script_path),
         ]
-
-
 
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
