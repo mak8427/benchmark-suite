@@ -12,16 +12,29 @@ def main():
         get_ior()
         assert check_ior() == True
 
-    try:
-        p = argparse.ArgumentParser()
-        p.add_argument("--partition", required=False)
+    p = argparse.ArgumentParser(description="Run FLOPS matrix multiplication benchmark via SLURM.")
+    p.add_argument(
+        "--partition",
+        default=None,
+        help="SLURM partition to submit the job to (default: scc-cpu).",
+    )
 
-        args = p.parse_args()
-        run_slurm_job(bench_name="IO_500", partition=args.partition)
+    p.add_argument(
+        "--nodes", "--n", "-n",
+        dest="nodes",
+        type=int,
+        default=1,
+        help="Number of nodes to request (default: 1).",
+    )
+    args = p.parse_args()
 
-    except:
-        print("No partition specified")
-        run_slurm_job(bench_name="IO_500", partition="None")
+
+    run_slurm_job(
+        bench_name="IO_500",
+        partition=args.partition,
+        nodes=args.nodes,
+    )
+
 
 
 if __name__ == "__main__":

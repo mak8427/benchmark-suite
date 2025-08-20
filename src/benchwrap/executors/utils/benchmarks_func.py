@@ -9,28 +9,28 @@ import h5py
 import pandas as pd
 
 
-def run_slurm_job(bench_name: str, partition: str):
+def run_slurm_job(bench_name: str, partition: str, nodes: int = 1):
     """
-    Submits a Slurm job, waits for it to complete, and post-processes its results.
+    Runs a SLURM job for the specified benchmark name, partition, and number of nodes.
+    The function submits a job using the `sbatch` command and handles potential errors
+    encountered during the job submission process. It also logs the job submission status.
 
-    Parameters:
-        job_cmd (str): The command to launch the job (e.g., using srun or sbatch).
-        post_cmd (str): The post-processing command to run after job completion (e.g., 'sh5util -j').
+    Args:
+        bench_name (str): The name of the benchmark to run.
+        partition (str): The SLURM partition where the job should be executed. Can be an
+            empty string if no partition is provided.
+        nodes (int): The number of nodes required for the job.
 
-    Workflow:
-        1. Submits the job and parses the Slurm job ID from stdout.
-        2. Polls `squeue` until the job disappears from the queue (i.e., it finishes).
-        3. Runs the post-processing command with the job ID.
-        4. Waits for the resulting HDF5 file to appear.
-        5. Reads and prints the structure and contents of the HDF5 file.
-        6. Queries Slurm accounting (`sacct`) to print energy and time metrics.
+    Raises:
+        subprocess.CalledProcessError: If there is an error in the `sbatch` command
+            execution, this exception will be raised with the relevant stderr output.
     """
     try:
         if partition is None:
             partition = ""
             print("Running No Partition provided")
 
-        job_id = sbatch_launch(bench_name, partition)
+        job_id = sbatch_launch(bench_name, partition, nodes)
     except subprocess.CalledProcessError as e:
         print("sbatch stderr:\n", e.stderr, "\n---")
         raise
@@ -101,29 +101,38 @@ def _make_executable(p: pathlib.Path) -> None:
     p.chmod(p.stat().st_mode | stat.S_IXUSR)
 
 
-def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
+def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -> int:
     """
-    Submit <bench_name>/job_start.sh with sbatch and return the job-ID.
+    Launches a benchmarking script on a SLURM cluster using the `sbatch` command. The function configures
+    the SLURM batch job submission command with job-specific parameters including the benchmarking script,
+    partition type, and number of nodes.
+    Parameters:
+        bench_name: str
+            The name of the benchmark to be executed. This corresponds to a script available within
+            the benchmarking resources.
+        partition: str, optional
+            The partition on the SLURM cluster to use for the job. Defaults to "scc-cpu".
+        nodes: int, optional
+            The number of computing nodes required for the job. Defaults to 1.
 
-    Parameters
-    ----------
-    bench_name : str
-        Folder under ``benchwrap/benchmarks/`` (e.g. ``flops_matrix_mul``).
-    partition : str
-        Slurm partition (queue) to use.
+    Returns:
+        int
+            The SLURM job ID of the submitted job.
 
-    Returns
-    -------
-    int
-        Slurm job ID raised by ``sbatch``.
+    Raises:
+        Various exceptions are raised depending on the specific subprocess execution or filesystem operations.
     """
     script_res = res.files("benchwrap.benchmarks") / bench_name / "job_start.sh"
     with res.as_file(script_res) as script_path:
         _make_executable(script_path)
 
         cmd = ["sbatch", "--parsable", "--hold"]
+
+        #Partition
         if partition:
             cmd += ["-p", partition]
+
+        #Output and Error
         cmd += [
             "--output",
             f"{os.environ['HOME']}/.local/share/benchwrap/job_%j/slurm-%j.out",
@@ -131,6 +140,13 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
             f"{os.environ['HOME']}/.local/share/benchwrap/job_%j/slurm-%j.err",
             str(script_path),
         ]
+
+        #N of nodes
+        cmd += ["--nodes", nodes]
+
+
+
+
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
         job_id = int(completed.stdout.strip().split(";")[0])

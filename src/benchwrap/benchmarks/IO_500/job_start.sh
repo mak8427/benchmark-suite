@@ -3,7 +3,7 @@
 #SBATCH --nodes=4
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
-#SBATCH --acctg-freq=energy=1
+#SBATCH --acctg-freq=energy=1s
 
 set -euo pipefail
 module load mpi
