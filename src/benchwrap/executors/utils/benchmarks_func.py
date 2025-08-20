@@ -140,3 +140,29 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu") -> int:
         )
         subprocess.run(["scontrol", "release", str(job_id)], check=True)
         return job_id
+
+
+def check_ior():
+    if os.path.exists(f"{os.environ["HOME"]}/.local/share/benchwrap/benchmarks/io500/bin/ior"):
+        return True
+    else:
+        print("No ior found")
+        return False
+
+def check_io500():
+    if os.path.exists(f"{os.environ["HOME"]}/.local/share/benchwrap/benchmarks/io500"):
+        return True
+    else:
+        print("No io500 found")
+        return False
+
+def get_ior():
+    print("Compiling ior")
+    os.chdir(f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks/io500")
+    subprocess.run(["bash" ,"prepare.sh"])
+
+
+
+def get_io500():
+    os.chdir(f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks")
+    subprocess.run(["git", "clone", "https://github.com/IO500/io500.git"])

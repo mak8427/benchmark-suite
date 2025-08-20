@@ -1,9 +1,21 @@
 import argparse
+import os
 
 from .utils.benchmarks_func import *
 
 
+
+
+
 def main():
+
+    if check_ior() == False:
+        if check_io500() == False:
+            get_io500()
+        get_ior()
+        assert check_ior() == True
+        
+
 
     try:
         p = argparse.ArgumentParser()
