@@ -4,15 +4,6 @@
 #SBATCH --acctg-freq=energy=1
 
 set -euo pipefail
-export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-
-
-
-
-
-#Create job dir
-DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
-mkdir -p "$DEST"
 
 /home/davide.mattioli/energy//bin/python3 -u -m benchwrap.benchmarks.flops_matrix_mul.workload 1>&2
 

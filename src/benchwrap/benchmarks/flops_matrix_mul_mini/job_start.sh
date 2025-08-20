@@ -6,11 +6,6 @@
 set -euo pipefail
 module load likwid
 source activate energy
-export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-
-#Create job dir
-DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
-mkdir -p "$DEST"
 
 #Trap And start Job
 
