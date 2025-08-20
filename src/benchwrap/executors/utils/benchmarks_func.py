@@ -133,7 +133,7 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
             cmd += ["-p", partition]
 
         # N of nodes
-        cmd += ["--nodes=", nodes]
+        cmd += [f"--nodes={nodes}" ]
 
 
         # Output and Error
