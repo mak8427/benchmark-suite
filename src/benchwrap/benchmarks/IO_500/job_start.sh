@@ -1,6 +1,5 @@
 #!/bin/bash
 #SBATCH --job-name=IO_500
-#SBATCH --nodes=4
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1s
