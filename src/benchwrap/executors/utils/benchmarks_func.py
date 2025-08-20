@@ -172,6 +172,7 @@ def get_io500():
     os.chdir(f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks")
     subprocess.run(["git", "clone", "https://github.com/IO500/io500.git"])
 
+
 def check_mpi():
     try:
         subprocess.run(["mpirun", "--version"], check=True, capture_output=True)
