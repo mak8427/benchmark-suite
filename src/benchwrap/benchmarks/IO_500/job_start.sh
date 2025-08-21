@@ -7,6 +7,7 @@
 
 
 module purge
+module load openmpi
 module load mpi
 
 
