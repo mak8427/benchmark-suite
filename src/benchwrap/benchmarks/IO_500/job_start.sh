@@ -6,8 +6,6 @@
 #SBATCH --acctg-freq=energy=1s
 
 
-module purge
-module load openmpi
 module load mpi
 
 
