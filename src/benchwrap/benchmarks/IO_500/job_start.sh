@@ -13,7 +13,7 @@ DEST="$HOME/.local/share/benchwrap/jobs/job_${SLURM_JOB_ID}"
 IO500="$HOME/.local/share/benchwrap/benchmarks/io500"
 cd "$DEST"
 
-mpiexec "$IO500/io500.sh" "$IO500/config-minimal.ini"
+srun "$IO500/io500.sh" "$IO500/config-minimal.ini"
 
 echo "$(ls)"
 
