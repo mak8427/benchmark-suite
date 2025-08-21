@@ -1,5 +1,4 @@
 #!/bin/bash
-#SBATCH -n 1
 #SBATCH --job-name=IO_500
 
 
