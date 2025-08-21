@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -n 64
+#SBATCH -n 1
 #SBATCH --job-name=IO_500
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
