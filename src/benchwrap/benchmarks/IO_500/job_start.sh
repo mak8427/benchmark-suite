@@ -13,7 +13,7 @@ module load mpi
 IO500="$HOME/.local/share/benchwrap/benchmarks/io500"
 cd "$DEST"
 
-srun "$IO500/io500.sh" "$IO500/config-minimal.ini"
+srun "$IO500/io500.sh" "$IO500/config-ssc.ini"
 
 echo "$(ls)"
 
