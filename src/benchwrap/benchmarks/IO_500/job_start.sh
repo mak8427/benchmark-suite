@@ -10,6 +10,9 @@ module load mpi
 
 
 
+
+
+DEST="$HOME/.local/share/benchwrap/jobs/job_${SLURM_JOB_ID}"
 IO500="$HOME/.local/share/benchwrap/benchmarks/io500"
 cd "$DEST"
 
