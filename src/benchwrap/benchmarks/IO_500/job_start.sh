@@ -5,7 +5,8 @@
 #SBATCH --acctg-freq=energy=1s
 
 set -euo pipefail
-module load mpi
+module purge
+module load openmpi
 
 
 
@@ -16,7 +17,7 @@ DEST="$HOME/.local/share/benchwrap/jobs/job_${SLURM_JOB_ID}"
 IO500="$HOME/.local/share/benchwrap/benchmarks/io500"
 cd "$DEST"
 
-srun "$IO500/io500.sh" "$IO500/config-scc.ini"
+mpiexec "$IO500/io500.sh" "$IO500/config-scc.ini"
 
 echo "$(ls)"
 
