@@ -7,6 +7,8 @@
 set -euo pipefail
 module load mpi
 
+
+
 DEST="$HOME/.local/share/benchwrap/jobs/job_${SLURM_JOB_ID}"
 cd "$DEST"
 
