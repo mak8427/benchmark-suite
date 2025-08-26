@@ -30,7 +30,7 @@ jobs:
       - name: Check for outdated dependencies
         run: |
           echo "Checking for outdated dependencies..."
-          pip install -r requirements.txt
+          pip install -r src/requirements.txt
           pip list --outdated --format=freeze > outdated.txt
           
           if [ -s outdated.txt ]; then

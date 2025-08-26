@@ -66,7 +66,9 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           
+          # Stage all changes first
           git add .
+          # Remove workflow files from staging
           git reset -- .github/workflows/
           
           if git diff --cached --quiet; then
@@ -88,10 +90,34 @@ jobs:
               exit 1
             else
               echo "Push failed, syncing and retrying..."
+              
+              # Stash any unstaged changes before syncing
+              if ! git diff --quiet || ! git diff --cached --quiet; then
+                echo "Stashing local changes..."
+                git stash push -m "temp-stash-for-sync"
+                STASHED=true
+              else
+                STASHED=false
+              fi
+              
+              # Fetch latest changes
               git fetch origin "$BRANCH_NAME"
-              git rebase "origin/$BRANCH_NAME" || {
+              
+              # Try to rebase, fall back to merge if it fails
+              if git rebase "origin/$BRANCH_NAME"; then
+                echo "Successfully rebased"
+              else
+                echo "Rebase failed, aborting and trying merge..."
                 git rebase --abort
-                git pull origin "$BRANCH_NAME" --no-rebase
-              }
+                git merge "origin/$BRANCH_NAME" --no-edit
+              fi
+              
+              # Restore stashed changes if any
+              if [ "$STASHED" = true ]; then
+                echo "Restoring stashed changes..."
+                git stash pop || echo "Warning: Could not restore stashed changes"
+              fi
+              
+              sleep 1
             fi
           done
