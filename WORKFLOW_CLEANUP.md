@@ -12,7 +12,7 @@ This document summarizes the cleanup of duplicated features and bug fixes applie
 - **After**: Removed autofix job from `test.yml`, kept dedicated `format.yml` workflow
 - **Result**: Single source of truth for code formatting
 
-#### Dependency Checking Duplication  
+#### Dependency Checking Duplication
 - **Before**: Both `test.yml` (dependency-update job) and `dependencies.yml` checked for outdated packages
 - **After**: Removed dependency-update job from `test.yml`, kept dedicated `dependencies.yml` workflow
 - **Result**: Single workflow for dependency monitoring with proper issue creation
