@@ -25,6 +25,3 @@ done
 
 
 echo "$(ls)"
-
-
-

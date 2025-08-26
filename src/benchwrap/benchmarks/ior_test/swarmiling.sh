@@ -17,6 +17,3 @@ cd "$DEST"
 
 
 echo "$(ls)"
-
-
-
