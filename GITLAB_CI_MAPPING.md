@@ -27,7 +27,7 @@ The GitLab CI pipeline is organized into logical stages that mirror the GitHub w
 - **Jobs**: `validate`
 - **GitHub equivalent**: Implicit in each workflow
 
-### 2. **test** Stage  
+### 2. **test** Stage
 - **Purpose**: Core testing and SLURM integration
 - **Jobs**: `test`, `test-slurm`
 - **GitHub equivalent**: `test.yml`

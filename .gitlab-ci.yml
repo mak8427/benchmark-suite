@@ -1,6 +1,6 @@
 # GitLab CI/CD Configuration
 # Mirrors GitHub Actions workflows structure and functionality
-# 
+#
 # This configuration replicates the following GitHub workflows:
 # 1. test.yml - Core testing and SLURM integration
 # 2. format.yml - Code formatting with auto-commit
@@ -97,7 +97,7 @@ test:
     - echo "Running linting (warn-only)..."
     - |
       PY_FILES="$(git ls-files '*.py' || true)"
-      if [ -n "$PY_FILES" ]; then 
+      if [ -n "$PY_FILES" ]; then
         pre-commit run --all-files --show-diff-on-failure || echo "Linting completed with warnings"
       fi
 
@@ -128,7 +128,7 @@ test-slurm:
     - apt-get update
     - apt-get install -y wget gnupg lsb-release
     - apt-get update && apt-get install -y --no-install-recommends slurm-client && rm -rf /var/lib/apt/lists/*
-    
+
     # Smoke test SLURM commands (mirrors GitHub step)
     - echo "Running SLURM smoke test..."
     - squeue --version && sinfo --version && sbatch --version
@@ -204,19 +204,19 @@ auto-format:
     # Check for changes (mirrors GitHub step)
     - |
       CHANGED_FILES=$(git status --porcelain | grep -v "^.* \.gitlab-ci.yml" || true)
-      
+
       if [ -n "$CHANGED_FILES" ]; then
         echo "Files were auto-formatted:"
         echo "$CHANGED_FILES"
-        
+
         # Stage all changes first
         git add .
         # Remove CI files from staging (like GitHub excludes workflows)
         git reset -- .gitlab-ci.yml
-        
+
         if ! git diff --cached --quiet; then
           git commit -m "style: auto-format code (excluding CI config) [skip ci]"
-          
+
           # Push changes (mirrors GitHub push logic)
           for i in {1..3}; do
             echo "Attempt $i to push changes..."
@@ -268,13 +268,13 @@ build-package:
         echo "Error: No distribution files found"
         exit 1
       fi
-      
+
       echo "Distribution files found:"
       ls -la dist/
-      
+
       if ! twine check dist/*; then
         echo "Warning: twine check failed, performing basic validation..."
-        
+
         for file in dist/*; do
           if [[ $file == *.whl ]]; then
             echo "Checking wheel file: $file"
@@ -299,15 +299,15 @@ build-package:
     - echo "Testing package installation..."
     - |
       WHEEL_FILE=$(find dist -name "*.whl" | head -1)
-      
+
       if [ -z "$WHEEL_FILE" ]; then
         echo "Error: No wheel file found for testing"
         exit 1
       fi
-      
+
       echo "Installing wheel: $WHEEL_FILE"
       pip install "$WHEEL_FILE"
-      
+
       python -c "
       import sys
       print('Package installed successfully')
@@ -317,25 +317,25 @@ build-package:
     # Get package version (mirrors GitHub step)
     - |
       VERSION=""
-      
+
       if [ -f "pyproject.toml" ]; then
         VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/' | head -1)
       elif [ -f "setup.py" ]; then
         VERSION=$(python setup.py --version 2>/dev/null || echo "")
       fi
-      
+
       if [ -z "$VERSION" ]; then
         VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "")
       fi
-      
+
       if [ -z "$VERSION" ] && [ -f ".bumpversion.cfg" ]; then
         VERSION=$(grep "current_version" .bumpversion.cfg | cut -d'=' -f2 | tr -d ' ')
       fi
-      
+
       if [ -z "$VERSION" ]; then
         VERSION="$(date +%Y.%m.%d)-$(git rev-parse --short HEAD)"
       fi
-      
+
       echo "Detected version: $VERSION"
       echo "PACKAGE_VERSION=$VERSION" >> build.env
 
@@ -343,7 +343,7 @@ build-package:
     - |
       echo "Build Summary"
       echo "============="
-      
+
       if [ -d "dist" ] && [ -n "$(ls -A dist)" ]; then
         echo "Build Status: SUCCESS"
         echo "Files created:"
@@ -356,7 +356,7 @@ build-package:
       else
         echo "Build Status: FAILED - No distribution files created"
       fi
-      
+
       echo "Build completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
   artifacts:
@@ -366,7 +366,7 @@ build-package:
     reports:
       dotenv: build.env
     expire_in: 1 week
-  
+
   rules:
     # Run on pushes to main/dev (mirrors GitHub)
     - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev")
@@ -387,21 +387,21 @@ dependency-check:
     - echo "Checking for outdated dependencies..."
     - pip install -r src/requirements.txt
     - pip list --outdated --format=freeze > outdated.txt || true
-    
+
     - |
       if [ -s outdated.txt ]; then
         echo "⚠️ Outdated dependencies found:"
         cat outdated.txt
         echo ""
         echo "Please consider updating these dependencies."
-        
+
         # Create GitLab issue (mirrors GitHub issue creation)
         echo "Creating GitLab issue for outdated dependencies..."
-        
+
         # Note: GitLab issue creation would require API calls or external tools
         # This is a placeholder for the functionality
         echo "Issue creation placeholder - would create issue with outdated dependencies"
-        
+
         exit 1
       else
         echo "✅ All dependencies are up to date!"
@@ -508,10 +508,10 @@ create-release:
     # Generate release notes (mirrors GitHub step)
     - |
       echo "Generating release notes..."
-      
+
       cat > release_notes.md << EOF
       ## Release $VERSION
-      
+
       ### Build Information
       - **Python Version**: $PYTHON_VERSION
       - **Built on**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
@@ -519,10 +519,10 @@ create-release:
       - **Branch**: $CI_COMMIT_BRANCH
       - **Pipeline**: $CI_PIPELINE_ID
       - **Triggered by**: $CI_PIPELINE_SOURCE
-      
+
       ### Distribution Files
       EOF
-      
+
       for file in dist/*; do
         if [ -f "$file" ]; then
           SIZE=$(stat -c%s "$file" 2>/dev/null || echo "unknown")
@@ -534,7 +534,7 @@ create-release:
     - echo "Creating GitLab release..."
     - echo "Release $VERSION would be created with artifacts from dist/"
     - echo "Note: Actual GitLab release creation requires API access or release-cli"
-    
+
     # Release summary (mirrors GitHub step)
     - |
       echo "Release Summary"
@@ -570,7 +570,7 @@ ci-status:
     - echo "Pipeline source: $CI_PIPELINE_SOURCE"
     - echo "Commit: $CI_COMMIT_SHA"
     - echo "Branch: $CI_COMMIT_BRANCH"
-    
+
     # Note: In GitLab, job dependencies and status checks work differently
     # This job runs at the end to summarize the overall pipeline status
     - echo "All required jobs in pipeline have completed"
@@ -601,30 +601,30 @@ sync-versions:
 
     # Resolve version conflicts automatically (mirrors GitHub logic)
     - echo "Resolving version conflicts automatically..."
-    
+
     - |
       # Get versions from both branches
       git fetch origin main
       MAIN_VERSION=$(git show origin/main:.bumpversion.cfg | grep "current_version" | cut -d'=' -f2 | tr -d ' ')
       DEV_VERSION=$(grep "current_version" .bumpversion.cfg | cut -d'=' -f2 | tr -d ' ')
-      
+
       echo "Main version: $MAIN_VERSION"
       echo "Dev version: $DEV_VERSION"
-      
+
       # Use the higher version (mirrors GitHub logic)
       if [[ "$MAIN_VERSION" > "$DEV_VERSION" ]]; then
         echo "Updating to main version: $MAIN_VERSION"
         sed -i "s/current_version = .*/current_version = $MAIN_VERSION/" .bumpversion.cfg
-        
+
         # Update other files too
         if [ -f "pyproject.toml" ]; then
           sed -i "s/version = \".*\"/version = \"$MAIN_VERSION\"/" pyproject.toml
         fi
-        
+
         if [ -f "README.md" ]; then
           sed -i "s/version: .*/version: $MAIN_VERSION/" README.md
         fi
-        
+
         # Commit if there are changes
         if ! git diff --quiet; then
           git add .
