@@ -5,4 +5,3 @@ tables>=3.10.2
 matplotlib >= 3.10.5
 click >= 8.2.1
 psutil>=5.0.0
-

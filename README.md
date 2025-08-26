@@ -73,7 +73,7 @@ After job completion, use the included analysis tools:
 # Generate HDF5 analysis (requires sh5util)
 python -c "from benchwrap.executors.utils.benchmarks_func import h5_analysis; h5_analysis('JOBID')"
 
-# View SLURM energy accounting  
+# View SLURM energy accounting
 sacct --format=jobid,elapsed,AveCPUFreq,ConsumedEnergy,ConsumedEnergyRaw -j JOBID
 ```
 
@@ -89,12 +89,12 @@ The suite includes several production-ready benchmarks optimized for energy anal
 
 ### Computational Benchmarks
 - **`flops_matrix_mul`** - Double-precision matrix multiplication (DGEMM) with LIKWID profiling
-- **`flops_matrix_mul_mini`** - Lightweight matrix multiplication benchmark  
+- **`flops_matrix_mul_mini`** - Lightweight matrix multiplication benchmark
 - **`flops_matrix_mul_no_likwid`** - Matrix multiplication without performance counter overhead
 - **`mem_bandwidth`** - Memory bandwidth testing using AXPY operations
 - **`cache_test`** - CPU cache hierarchy performance analysis
 
-### I/O Benchmarks  
+### I/O Benchmarks
 - **`ior_test`** - Parallel I/O performance using IOR benchmark suite
 - **`io_500`** - Comprehensive I/O performance evaluation based on IO-500 benchmark
 
@@ -129,7 +129,7 @@ The suite calculates detailed energy efficiency metrics:
 - `Energy_Metrics.ipynb` - Comprehensive energy analysis with visualization
 - `UserJobProfiling.ipynb` - User-specific job profiling and comparison
 
-**HDF5 Processing**: 
+**HDF5 Processing**:
 - Automatic conversion of SLURM profiling data to structured HDF5 format
 - Integration with `sh5util` for SLURM profile data extraction
 - Pandas-based analysis workflows for large datasets
@@ -138,7 +138,7 @@ The suite calculates detailed energy efficiency metrics:
 
 Hardware performance monitoring through LIKWID-perfctr:
 - **CPU Performance Counters**: FLOPS, cache misses, memory bandwidth
-- **Timeline Profiling**: Power and performance data with temporal resolution  
+- **Timeline Profiling**: Power and performance data with temporal resolution
 - **Hardware Metrics**: CPU frequency, energy consumption, thermal data
 
 ## SLURM Integration
@@ -188,14 +188,14 @@ For full functionality, the following tools must be available in the HPC environ
 
 **Core SLURM Commands:**
 - `sbatch` - Job submission with energy profiling support
-- `squeue` - Job queue monitoring  
+- `squeue` - Job queue monitoring
 - `sinfo` - Partition and node information
 - `sacct` - Job accounting and energy consumption data
 - `scontrol` - Job control and release operations
 
 **Performance Monitoring Tools:**
 - `likwid-perfctr` - Hardware performance counter access
-- `sh5util` - SLURM profile data to HDF5 conversion  
+- `sh5util` - SLURM profile data to HDF5 conversion
 - Environment modules system for `likwid` module loading
 
 **Python Environment:**
@@ -217,7 +217,7 @@ src/benchwrap/
 │   └── ...
 ├── executors/                # Benchmark execution modules
 │   ├── mem_bandwidth.py      # Memory bandwidth executor
-│   ├── flops_matrix_mul.py   # FLOPS benchmark executor  
+│   ├── flops_matrix_mul.py   # FLOPS benchmark executor
 │   └── utils/
 │       └── benchmarks_func.py # Core SLURM and analysis functions
 └── data_analysis/            # Jupyter notebooks for energy analysis
@@ -228,7 +228,7 @@ src/benchwrap/
 ### Workflow
 
 1. **Job Submission**: `benchwrap run` → `sbatch_launch()` → SLURM job queue
-2. **Execution**: SLURM executes `job_start.sh` with LIKWID profiling  
+2. **Execution**: SLURM executes `job_start.sh` with LIKWID profiling
 3. **Data Collection**: Energy, performance counters, and timing data captured
 4. **Analysis**: HDF5 conversion and Jupyter notebook analysis tools
 
@@ -265,7 +265,7 @@ The project uses GitHub Actions for continuous integration with comprehensive te
 The SLURM CI job (`cli-slurm`) specifically tests:
 - SLURM command availability
 - Job submission and monitoring
-- Output validation  
+- Output validation
 - Benchmark suite integration
 
 ## CI/CD

@@ -8,7 +8,3 @@ set -euo pipefail
 /home/davide.mattioli/energy//bin/python3 -u -m benchwrap.benchmarks.flops_matrix_mul.workload 1>&2
 
 python3 -u -m benchwrap.benchmarks.flops_matrix_mul_mini.workload 1>&2
-
-
-
-
