@@ -17,6 +17,3 @@ srun --cpu-bind=cores \
 benchwrap run flops_matrix_mul scc-cpu
 
 echo "Results -> $DEST"
-
-
-

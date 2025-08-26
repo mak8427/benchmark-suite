@@ -13,6 +13,3 @@ srun --cpu-bind=cores \
 
 
 echo "Results -> $DEST"
-
-
-

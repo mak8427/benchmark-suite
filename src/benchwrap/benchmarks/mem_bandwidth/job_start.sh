@@ -14,4 +14,3 @@ srun likwid-perfctr -C 0-24-g FLOPS_DP -t 1s -O \
 #python3 -u benchmarks/mem_bandwidth/launcher.py
 
 echo "LIKWID output saved to flops_${SLURM_JOB_ID}.csv"
-
