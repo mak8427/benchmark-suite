@@ -19,12 +19,12 @@ if [ -n "$CHANGED_FILES" ]; then
     # Determine which branch to push to
     BRANCH_NAME=${CI_COMMIT_BRANCH:-${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-main}}
     echo "Target branch for pushing changes: $BRANCH_NAME"
-    
+
     # Check if branch exists remotely
     if ! git ls-remote --heads origin $BRANCH_NAME | grep -q $BRANCH_NAME; then
       echo "Warning: Branch $BRANCH_NAME doesn't exist remotely. Defaulting to main branch."
       BRANCH_NAME="main"
-      
+
       # Make sure we're on the main branch
       git fetch origin $BRANCH_NAME
       git checkout $BRANCH_NAME || git checkout -b $BRANCH_NAME origin/$BRANCH_NAME
@@ -34,10 +34,10 @@ if [ -n "$CHANGED_FILES" ]; then
     echo "Attempting to push to branch: $BRANCH_NAME"
     for i in {1..3}; do
       echo "Attempt $i to push changes..."
-      
+
       # Pull latest changes to avoid conflicts
       git fetch origin $BRANCH_NAME
-      
+
       if [ "$i" -gt 1 ]; then
         # For retries, merge the latest changes
         if ! git merge --ff-only origin/$BRANCH_NAME; then
@@ -51,7 +51,7 @@ if [ -n "$CHANGED_FILES" ]; then
           }
         fi
       fi
-      
+
       if git push origin HEAD:$BRANCH_NAME; then
         echo "Successfully pushed formatting changes!"
         break
