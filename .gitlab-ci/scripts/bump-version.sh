@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-source version.env
+source version.env || echo "No version.env file found, using default version part"
+VERSION_PART=${VERSION_PART:-patch}
 
-# Handle detached HEAD state by explicitly checking out the branch
 if [ "$CI_PIPELINE_SOURCE" = "push" ] && [ "$CI_COMMIT_BRANCH" = "dev" ]; then
   echo "Bumping $VERSION_PART version for dev push..."
 
