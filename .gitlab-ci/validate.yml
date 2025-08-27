@@ -1,0 +1,13 @@
+# ==============================================================================
+# VALIDATION STAGE
+# ==============================================================================
+
+validate:
+  stage: validate
+  script:
+    - echo "Starting pipeline validation"
+    - echo "Python version:$PYTHON_VERSION"
+    - echo "Pipeline source:$CI_PIPELINE_SOURCE"
+    - echo "Commit:$CI_COMMIT_SHA"
+    - echo "Branch:$CI_COMMIT_BRANCH"
+    - echo "Pipeline ID:$CI_PIPELINE_ID"

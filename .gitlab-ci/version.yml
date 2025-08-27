@@ -1,0 +1,31 @@
+# ==============================================================================
+# VERSION STAGE (mirrors version.yml)
+# ==============================================================================
+
+version-bump:
+  stage: version
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+  before_script:
+    - python --version
+    - python -m pip install --upgrade pip
+    # Configure git with CI token for authentication
+    - git config --global user.name "gitlab-ci[bot]"
+    - git config --global user.email "gitlab-ci[bot]@gitlab.com"
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
+    # Use the CI_JOB_TOKEN for authentication
+    - echo "Configuring remote with CI job token..."
+    - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab-ce.gwdg.de/davide.mattioli/benchmark-suite.git"
+    # Verify the remote URL (hide token from logs)
+    - git remote -v | sed 's/https:\/\/gitlab-ci-token:.*@/https:\/\/gitlab-ci-token:****@/'
+  script:
+    - pip install bump2version build
+    - .gitlab-ci/scripts/determine-version-part.sh
+    - .gitlab-ci/scripts/bump-version.sh
+    - .gitlab-ci/scripts/sync-version-to-dev.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"

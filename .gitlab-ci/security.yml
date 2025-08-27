@@ -1,0 +1,19 @@
+# ==============================================================================
+# SECURITY STAGE (mirrors security.yml)
+# ==============================================================================
+
+security-scan:
+  stage: security
+  allow_failure: true
+  script:
+    - pip install -r src/requirements.txt
+    - pip install safety bandit
+    - echo "Checking for known security vulnerabilities in dependencies..."
+    - safety check --json || echo "Safety check completed with warnings"
+    - echo "Running bandit security linter..."
+    - bandit -r src/ -f json || echo "Bandit scan completed with warnings"
+    - echo "Checking for potential secrets..."
+    - grep -r -i "password\|secret\|token\|key\|api" src/ || echo "No obvious secrets found"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev")
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

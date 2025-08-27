@@ -1,0 +1,21 @@
+# ==============================================================================
+# FORMAT STAGE (mirrors format.yml)
+# ==============================================================================
+
+auto-format:
+  stage: format
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+  script:
+    - pip install pre-commit==3.5.0
+    - git config --local user.name "gitlab-ci[bot]"
+    - git config --local user.email "gitlab-ci[bot]@gitlab.com"
+    - echo "Running auto-formatting with project pre-commit config..."
+    - pre-commit run --all-files || echo "Some files were formatted"
+    - .gitlab-ci/scripts/commit-formatting-changes.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev")
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev")
+      when: always

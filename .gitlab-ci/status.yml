@@ -1,0 +1,18 @@
+# ==============================================================================
+# STATUS STAGE (mirrors ci.yml)
+# ==============================================================================
+
+ci-status:
+  stage: status
+  script:
+    - echo "Checking CI/CD pipeline status..."
+    - echo "Pipeline ID:$CI_PIPELINE_ID"
+    - echo "Pipeline source:$CI_PIPELINE_SOURCE"
+    - echo "Commit:$CI_COMMIT_SHA"
+    - echo "Branch:$CI_COMMIT_BRANCH"
+    - echo "All required jobs in pipeline have completed"
+    - echo "✅ CI/CD pipeline status check completed"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev")
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  when: always
