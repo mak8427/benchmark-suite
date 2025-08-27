@@ -8,6 +8,7 @@ import click
 @click.command()
 def list(dir: bool) -> None:
     """
+
     Recursively explores directories and executes Python files via user input.
 
     Parameters:
