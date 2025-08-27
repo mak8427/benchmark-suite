@@ -7,14 +7,26 @@ version-bump:
   variables:
     GIT_STRATEGY: clone
     GIT_DEPTH: 0
+    # Allow job to succeed even if version bumping fails
+    # This is useful for mirrored repositories where GitHub handles versioning
+    ALLOW_FAILURE: "true"
   script:
     - pip install bump2version build
     - git config --global --add safe.directory "$CI_PROJECT_DIR"
     - git config --local user.name "gitlab-ci[bot]"
     - git config --local user.email "gitlab-ci[bot]@gitlab.com"
     - .gitlab-ci/scripts/determine-version-part.sh
-    - .gitlab-ci/scripts/bump-version.sh
-    - .gitlab-ci/scripts/sync-version-to-dev.sh
+    - |
+      # Check if we should allow this job to fail silently
+      if [ "$ALLOW_FAILURE" = "true" ] && git remote -v | grep -q github; then
+        echo "Repository is mirrored from GitHub - version bumping will be handled there"
+        echo "This job will continue without error even if version bumping fails"
+        .gitlab-ci/scripts/bump-version.sh || true
+        .gitlab-ci/scripts/sync-version-to-dev.sh || true
+      else
+        .gitlab-ci/scripts/bump-version.sh
+        .gitlab-ci/scripts/sync-version-to-dev.sh
+      fi
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
