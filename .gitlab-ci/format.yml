@@ -16,4 +16,6 @@ auto-format:
     - .gitlab-ci/scripts/commit-formatting-changes.sh
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev")
+      when: always
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev")
+      when: always
