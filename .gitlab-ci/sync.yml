@@ -1,0 +1,16 @@
+# ==============================================================================
+# SYNC STAGE (mirrors sync-versions.yml)
+# ==============================================================================
+
+sync-versions:
+  stage: sync
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+  script:
+    - git config --local user.name "gitlab-ci[bot]"
+    - git config --local user.email "gitlab-ci[bot]@gitlab.com"
+    - echo "Resolving version conflicts automatically..."
+    - .gitlab-ci/scripts/resolve-version-conflicts.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"

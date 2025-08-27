@@ -1,0 +1,27 @@
+# ==============================================================================
+# BUILD STAGE (mirrors build.yml)
+# ==============================================================================
+
+build-package:
+  stage: build
+  needs: ["test"]
+  script:
+    - pip install build==1.0.3 twine==4.0.2 setuptools>=65.0
+    - echo "Building package..."
+    - python -m build --wheel --sdist
+    - echo "Checking package integrity..."
+    - .gitlab-ci/scripts/check-package-integrity.sh
+    - echo "Testing package installation..."
+    - .gitlab-ci/scripts/test-package-installation.sh
+    - .gitlab-ci/scripts/get-package-version.sh
+    - .gitlab-ci/scripts/build-summary.sh
+  artifacts:
+    when: always
+    paths:
+      - dist/
+    reports:
+      dotenv: build.env
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev")
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

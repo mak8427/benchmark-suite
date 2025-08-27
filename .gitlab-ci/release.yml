@@ -1,0 +1,27 @@
+# ==============================================================================
+# RELEASE STAGE (mirrors build.yml release functionality)
+# ==============================================================================
+
+create-release:
+  stage: release
+  needs: ["build-package"]
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+  script:
+    - echo "Build artifacts available in dist/"
+    - ls -la dist/
+    - .gitlab-ci/scripts/get-release-version.sh
+    - .gitlab-ci/scripts/generate-release-notes.sh
+    - echo "Creating GitLab release..."
+    - echo "Release $VERSION would be created with artifacts from dist/"
+    - echo "Note:Actual GitLab release creation requires API access or release-cli"
+    - .gitlab-ci/scripts/release-summary.sh
+  artifacts:
+    paths:
+      - release_notes.md
+      - dist/
+    expire_in: 1 month
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE =~ /^Merge/

@@ -1,0 +1,19 @@
+# ==============================================================================
+# DEPENDENCIES STAGE (mirrors dependencies.yml)
+# ==============================================================================
+
+dependency-check:
+  stage: dependencies
+  script:
+    - pip install pip-tools==7.3.0
+    - echo "Checking for outdated dependencies..."
+    - pip install -r src/requirements.txt
+    - pip list --outdated --format=freeze > outdated.txt || true
+    - .gitlab-ci/scripts/check-outdated-dependencies.sh
+  artifacts:
+    when: always
+    paths:
+      - outdated.txt
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"

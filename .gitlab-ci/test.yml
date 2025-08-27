@@ -1,0 +1,44 @@
+# ==============================================================================
+# TEST STAGE (mirrors test.yml)
+# ==============================================================================
+
+test:
+  stage: test
+  script:
+    - pip install -r src/requirements.txt
+    - pip install pytest-cov pytest-xdist pre-commit
+    - echo "Using pip cache at $PIP_CACHE_DIR"
+    - echo "Installing pre-commit hooks..."
+    - .gitlab-ci/scripts/run-linting.sh
+    - echo "Running unit tests with coverage..."
+    - python -m pytest tests/ -v --tb=short --cov=src --cov-report=xml --cov-report=term-missing
+  artifacts:
+    when: always
+    paths:
+      - coverage.xml
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    expire_in: 1 week
+
+test-slurm:
+  stage: test
+  services:
+    - name: mysql:8.0
+      alias: mysql
+  variables:
+    MYSQL_ROOT_PASSWORD: "root"
+  script:
+    - .gitlab-ci/scripts/setup-slurm.sh
+    - echo "Running SLURM smoke test..."
+    - squeue --version && sinfo --version && sbatch --version
+    - pip install -r src/requirements.txt
+    - pip install build twine pytest
+    - pip install -e .
+    - echo "Testing benchmark suite CLI..."
+    - benchwrap list
+    - echo "Running SLURM integration tests..."
+    - python -m pytest tests/test_slurm.py -v --tb=short
+    - echo "Testing benchmark suite SLURM integration..."
+    - echo "✓ SLURM integration tests completed"
