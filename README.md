@@ -1,7 +1,7 @@
 # Benchmark Suite
 
 **benchwrap** is an energy-aware benchmarking toolkit designed for High Performance Computing (HPC) environments. It provides comprehensive energy consumption analysis and performance profiling through seamless SLURM integration and advanced monitoring tools.
-version: 0.2.12
+version: 0.2.13
 ## Features
 
 - **Energy-Aware Benchmarking**: Advanced energy consumption tracking with detailed metrics analysis
