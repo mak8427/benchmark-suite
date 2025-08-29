@@ -209,8 +209,6 @@ def run(ctx, name, partition, nodes, opt_partition, opt_nodes):
             click.echo(f"[warn] Ignoring invalid nodes value: {eff_nodes}")
             normalized_nodes = None
 
-
-
     # Helper to append common args
     def extend_slurm_args(cmd: list) -> list:
         if partition:
