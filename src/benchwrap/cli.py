@@ -251,10 +251,10 @@ def add(source):
     dest = add_impl(src, USER_ROOT)
     click.echo(f"✔ Added {dest.name}.  Run `benchwrap list` to see it.")
 
+
 @benchwrap.command()
 def sync():
     """Sync the data directory to remote storage."""
     click.echo("Syncing data directory to remote storage…")
     # Placeholder implementation
     click.echo("✔ Sync complete.")
-
