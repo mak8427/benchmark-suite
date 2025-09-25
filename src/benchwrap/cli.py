@@ -6,6 +6,7 @@ Provides functionality for listing, running, adding, and syncing benchmarks.
 """
 
 import importlib.resources as res
+import mimetypes
 import os
 import pathlib
 import pkgutil
@@ -15,22 +16,25 @@ import subprocess
 import sys
 import threading
 import time
-
-import requests
-import click
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import requests, mimetypes, os, time
-from benchwrap.core import add_impl
 from threading import Lock
+
+import click
+import requests
+
+from benchwrap.core import add_impl
 
 # Configuration constants
 BENCH_PKG = "benchwrap.benchmarks"
 EXECUTORS_PKG = "benchwrap.executors"
-DATA_DIR = pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share")) / "benchwrap"
+DATA_DIR = (
+    pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
+    / "benchwrap"
+)
 TOK_FILE = DATA_DIR / "tokens"
 USER_ROOT = (
-        pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
-        / "benchwrap/benchmarks"
+    pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
+    / "benchwrap/benchmarks"
 )
 BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/benchmarks"
 BASE = "http://141.5.110.112:7800"
@@ -328,6 +332,7 @@ def add(source):
 
 # Authentication and data management functions
 
+
 def ensure_data_dir():
     """
     Ensure the data directory and token file exist with proper permissions.
@@ -349,7 +354,8 @@ def register():
         str|bool: Access token on success, False on failure
     """
     ensure_data_dir()
-    import requests, click
+    import click
+    import requests
 
     u = click.prompt("Username", type=str)
     p = click.prompt("Password", hide_input=True)
@@ -357,8 +363,9 @@ def register():
         click.echo("Passwords do not match!")
         return False
 
-    r = requests.post("http://141.5.110.112:7800/auth/register",
-                      json={"username": u, "password": p})
+    r = requests.post(
+        "http://141.5.110.112:7800/auth/register", json={"username": u, "password": p}
+    )
     if r.status_code != 201:
         click.echo(f"Registration failed: {r.text}")
         return False
@@ -386,7 +393,8 @@ def get_access_token():
     Returns:
         str|bool: Access token on success, False on failure
     """
-    import requests, click
+    import click
+    import requests
 
     if not TOK_FILE.exists():
         click.echo("No registration found. Please register first.")
@@ -411,12 +419,14 @@ def login():
         str|bool: Access token on success, False on failure
     """
     ensure_data_dir()
-    import requests, click
+    import click
+    import requests
 
     u = click.prompt("Username", type=str)
     p = click.prompt("Password", hide_input=True)
-    r = requests.post("http://141.5.110.112:7800/auth/password",
-                      params={"u": u, "p": p})
+    r = requests.post(
+        "http://141.5.110.112:7800/auth/password", params={"u": u, "p": p}
+    )
     if r.status_code != 200:
         click.echo(f"Login failed: {r.text}")
         return False
@@ -428,6 +438,7 @@ def login():
 
 
 # File management and upload functions
+
 
 def list_files_upload():
     """
@@ -460,16 +471,23 @@ def upload_file(filepath, arcname, access_token):
     Returns:
         bool: True if upload successful, False otherwise
     """
-    import os, mimetypes, requests, time, click
+    import mimetypes
+    import os
+    import time
+
+    import click
+    import requests
 
     BASE = "http://141.5.110.112:7800"
     name = arcname.replace(os.sep, "/").lstrip("/")[:256]  # Normalize path
 
     # Get presigned upload URL
-    r = requests.post(f"{BASE}/storage/presign/upload",
-                      params={"object_name": name},
-                      headers={"Authorization": f"Bearer {access_token}"},
-                      timeout=(10, 30))
+    r = requests.post(
+        f"{BASE}/storage/presign/upload",
+        params={"object_name": name},
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=(10, 30),
+    )
     if r.status_code != 200:
         click.echo(f"presign failed: {name}: {r.status_code} {r.text}")
         return False
@@ -480,16 +498,19 @@ def upload_file(filepath, arcname, access_token):
 
     # Handle zero-byte files specially
     if size == 0:
-        put = requests.put(url, data=b"",
-                           headers={"Content-Type": ctype, "Content-Length": "0"},
-                           timeout=(10, 30))
+        put = requests.put(
+            url,
+            data=b"",
+            headers={"Content-Type": ctype, "Content-Length": "0"},
+            timeout=(10, 30),
+        )
     else:
         t0 = time.time()
         pf = ProgressFile(filepath, lambda s, t: _progress_line(name, s, t, t0))
         try:
-            put = requests.put(url, data=pf,
-                               headers={"Content-Type": ctype},
-                               timeout=(10, None))
+            put = requests.put(
+                url, data=pf, headers={"Content-Type": ctype}, timeout=(10, None)
+            )
         finally:
             pf.close()
             print()
@@ -514,15 +535,19 @@ def upload_one(idx, access, fpath, name):
     Returns:
         tuple: (name, success_boolean)
     """
-    import requests, mimetypes, os, time
+    import mimetypes
+    import os
+    import time
+
+    import requests
 
     s = requests.Session()
     s.headers.update({"Authorization": f"Bearer {access}"})
 
     # Get presigned URL
-    r = s.post(f"{BASE}/storage/presign/upload",
-               params={"object_name": name},
-               timeout=(10, 30))
+    r = s.post(
+        f"{BASE}/storage/presign/upload", params={"object_name": name}, timeout=(10, 30)
+    )
     if r.status_code != 200:
         table_update(idx, f"✗ {name}  [presign {r.status_code}]")
         return name, False
@@ -533,24 +558,35 @@ def upload_one(idx, access, fpath, name):
 
     # Handle zero-byte files
     if size == 0:
-        put = requests.put(url, data=b"",
-                           headers={"Content-Type": ctype, "Content-Length": "0"},
-                           timeout=(10, 30))
+        put = requests.put(
+            url,
+            data=b"",
+            headers={"Content-Type": ctype, "Content-Length": "0"},
+            timeout=(10, 30),
+        )
         table_update(idx, f"{name[:24]:<24} ✓ zero-byte [{put.status_code}]")
         return name, put.ok
 
     # Upload with progress tracking
     t0 = time.time()
-    pf = ProgressFile(fpath, lambda snt, tot: table_update(idx, pac_line(name, snt, tot, t0)))
+    pf = ProgressFile(
+        fpath, lambda snt, tot: table_update(idx, pac_line(name, snt, tot, t0))
+    )
     try:
-        put = requests.put(url, data=pf,
-                           headers={"Content-Type": ctype, "Content-Length": str(size)},
-                           timeout=(10, None))
+        put = requests.put(
+            url,
+            data=pf,
+            headers={"Content-Type": ctype, "Content-Length": str(size)},
+            timeout=(10, None),
+        )
     finally:
         pf.close()
 
-    status_msg = (f"{name[:24]:<24} ✓ done" if put.ok
-                  else f"{name[:24]:<24} ✗ [{put.status_code}]")
+    status_msg = (
+        f"{name[:24]:<24} ✓ done"
+        if put.ok
+        else f"{name[:24]:<24} ✗ [{put.status_code}]"
+    )
     table_update(idx, status_msg)
     return name, put.ok
 
@@ -569,14 +605,19 @@ def upload_many(access, indexed_files, workers=4):
     """
     results = []
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        futs = [ex.submit(upload_one, idx, access, fp, rel.replace(os.sep, "/").lstrip("/")[:256])
-                for idx, (fp, rel) in indexed_files]
+        futs = [
+            ex.submit(
+                upload_one, idx, access, fp, rel.replace(os.sep, "/").lstrip("/")[:256]
+            )
+            for idx, (fp, rel) in indexed_files
+        ]
         for f in as_completed(futs):
             results.append(f.result())
     return results
 
 
 # Progress display utilities
+
 
 def pac_line(name, sent, size, t0, width=28):
     """
@@ -604,13 +645,16 @@ def pac_line(name, sent, size, t0, width=28):
     # Create Pac-Man animation
     pos = 0 if size == 0 else min(width - 1, int((sent / size) * width))
     mouth = "C" if int(time.time() * 6) % 2 == 0 else "c"  # Animate mouth
-    rail = [("-" if i < pos else ("o" if (i - pos) % 3 == 0 else " "))
-            for i in range(width)]
+    rail = [
+        ("-" if i < pos else ("o" if (i - pos) % 3 == 0 else " ")) for i in range(width)
+    ]
     rail[pos] = mouth
     bar = "".join(rail)
 
-    return (f"{name[:24]:<24} [{bar}] {pct:3d}% {mb:6.1f}/{total:6.1f} MiB "
-            f"{spd:5.2f} MiB/s ETA {eta}")
+    return (
+        f"{name[:24]:<24} [{bar}] {pct:3d}% {mb:6.1f}/{total:6.1f} MiB "
+        f"{spd:5.2f} MiB/s ETA {eta}"
+    )
 
 
 def table_start(n):
@@ -660,7 +704,8 @@ class ProgressFile:
             on_progress (callable): Callback function(bytes_sent, total_size)
         """
         import os
-        self.f = open(path, 'rb')
+
+        self.f = open(path, "rb")
         self.size = os.path.getsize(path)
         self.sent = 0
         self.cb = on_progress
@@ -697,11 +742,12 @@ def _progress_line(name, sent, size, t0, width=28):
     Args:
         name (str): File name
         sent (int): Bytes sent
-        size (int): Total size  
+        size (int): Total size
         t0 (float): Start time
         width (int): Progress bar width
     """
-    import sys, time
+    import sys
+    import time
 
     pct = 0 if size == 0 else int(sent * 100 / size)
     mb, total = sent / (1024 * 1024), max(size, 1) / (1024 * 1024)
@@ -724,8 +770,10 @@ def _progress_line(name, sent, size, t0, width=28):
     rail[pos] = mouth  # Pac-man at current position
     bar = "".join(rail)
 
-    line = (f"{name[:24]:<24} [{bar}] {pct:3d}% {mb:6.1f}/{total:6.1f} MiB "
-            f"{spd:5.2f} MiB/s ETA {eta}\r")
+    line = (
+        f"{name[:24]:<24} [{bar}] {pct:3d}% {mb:6.1f}/{total:6.1f} MiB "
+        f"{spd:5.2f} MiB/s ETA {eta}\r"
+    )
     sys.stdout.write(line)
     sys.stdout.flush()
 
@@ -744,8 +792,14 @@ def _human(n):
 
 
 @benchwrap.command()
-@click.option("-j", "--jobs", type=int, default=4, show_default=True,
-              help="Number of parallel upload workers")
+@click.option(
+    "-j",
+    "--jobs",
+    type=int,
+    default=4,
+    show_default=True,
+    help="Number of parallel upload workers",
+)
 def sync(jobs):
     """
     Synchronize local benchmark files with the remote server.
@@ -780,7 +834,9 @@ def sync(jobs):
     total_size = sum(os.path.getsize(fp) for fp, _ in files)
 
     # Confirm upload
-    click.echo(f":: Synchronizing {len(files)} files ({_human(total_size)}) with {jobs} jobs")
+    click.echo(
+        f":: Synchronizing {len(files)} files ({_human(total_size)}) with {jobs} jobs"
+    )
     if not click.confirm(":: Proceed?", default=True):
         click.echo("Aborted.")
         return False
@@ -791,5 +847,7 @@ def sync(jobs):
 
     # Report final statistics
     ok = sum(1 for _, success in results if success)
-    click.echo(f":: Summary: {ok}/{len(files)} uploaded successfully, {_human(total_size)} total")
+    click.echo(
+        f":: Summary: {ok}/{len(files)} uploaded successfully, {_human(total_size)} total"
+    )
     click.echo("✔ Sync complete.")
