@@ -15,13 +15,21 @@ _rows = 0
 
 
 def safe_print(message: str) -> None:
-    """Print a message while holding the shared lock to avoid interleaving."""
+    """Emit a thread-safe message via Click.
+
+    Input: message string to display.
+    Output: writes to stdout while holding ``PRINT_LOCK``; returns ``None``.
+    """
     with PRINT_LOCK:
         click.echo(message)
 
 
 def table_start(num_rows: int) -> None:
-    """Reserve screen space for the progress table and move the cursor to the top."""
+    """Initialise terminal space for a fixed-size progress table.
+
+    Input: number of rows that should be allocated.
+    Output: positions the cursor appropriately; returns ``None``.
+    """
     global _rows
     _rows = num_rows
     sys.stdout.write("\n" * num_rows)
@@ -31,7 +39,11 @@ def table_start(num_rows: int) -> None:
 
 
 def table_update(row_index: int, text: str) -> None:
-    """Rewrite a specific row in the progress table."""
+    """Update a single row within the progress table.
+
+    Input: zero-based row index and replacement text.
+    Output: rewrites the row atomically; returns ``None``.
+    """
     with PRINT_LOCK:
         sys.stdout.write("\x1b[u")
         sys.stdout.write(f"\x1b[{row_index}B")
@@ -42,7 +54,11 @@ def table_update(row_index: int, text: str) -> None:
 
 
 class ProgressFile:
-    """Wrap a file object and trigger a callback as data is read."""
+    """File-like object that reports upload progress while streaming.
+
+    Input: path to the file and a callback accepting (bytes_sent, total_size).
+    Output: iterator-compatible wrapper exposing ``read``/``close`` plus ``__len__``.
+    """
 
     def __init__(self, filepath: str, progress_callback: Callable[[int, int], None]):
         self.file_handle = open(filepath, "rb")
@@ -65,7 +81,11 @@ class ProgressFile:
 
 
 def pac_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> str:
-    """Return an animated pacman progress bar for table output."""
+    """Build a pacman-style progress string for tabular updates.
+
+    Input: object name, bytes sent/total, start timestamp, and optional width.
+    Output: formatted status line suitable for ``table_update``.
+    """
     percentage = 0 if size == 0 else int(sent * 100 / size)
     megabytes_sent = sent / 1048576
     total_megabytes = max(size, 1) / 1048576
@@ -98,7 +118,11 @@ def pac_line(name: str, sent: int, size: int, start_time: float, width: int = 28
 
 
 def inline_progress_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> str:
-    """Return a carriage-return terminated progress line for inline updates."""
+    """Build an inline progress string ending with ``\r`` for streaming.
+
+    Input: object name, bytes sent/total, start timestamp, optional bar width.
+    Output: carriage-return terminated status line for inline printing.
+    """
     percentage = 0 if size == 0 else int(sent * 100 / size)
     megabytes_sent = sent / 1048576
     total_megabytes = max(size, 1) / 1048576

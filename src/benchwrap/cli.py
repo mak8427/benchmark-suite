@@ -37,7 +37,11 @@ from .cli_sync import (
 
 @click.group()
 def benchwrap():
-    """Energy-aware benchmark helper."""
+    """Energy-aware benchmark helper.
+
+    Input: none (serves as the Click entry point).
+    Output: returns a Click command group object.
+    """
 
 @benchwrap.command("old_list")
 @click.argument(
@@ -48,11 +52,21 @@ def benchwrap():
 )
 @click.option("--dir/--no-dir", "show_dir", default=False, help="Also list sub-directories.")
 def old_list(start: str, show_dir: bool) -> None:
+    """Legacy interactive browser for benchmark files.
+
+    Input: starting directory and flag to include sub-directories.
+    Output: delegates to ``old_list_impl`` and returns ``None``.
+    """
     old_list_impl(start, show_dir, subprocess_module=subprocess)
 
 
 @benchwrap.command("list")
 def _list():
+    """List all discovered benchmarks.
+
+    Input: none.
+    Output: prints benchmark names via Click and returns ``None``.
+    """
     list_impl(USER_ROOT)
 
 
@@ -63,6 +77,11 @@ def _list():
 @click.option("-p", "--partition", "opt_partition", required=False, help="SLURM partition")
 @click.option("-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes")
 def run(name, partition, nodes, opt_partition, opt_nodes):
+    """Execute a benchmark matching ``name``.
+
+    Input: optional positional/flagged arguments for benchmark name and SLURM options.
+    Output: runs the helper and returns ``None``.
+    """
     run_impl(
         name,
         partition,
@@ -77,6 +96,11 @@ def run(name, partition, nodes, opt_partition, opt_nodes):
 @benchwrap.command()
 @click.argument("source", type=click.Path(exists=True))
 def add(source):
+    """Register a new benchmark source with Benchwrap.
+
+    Input: filesystem path to the benchmark source.
+    Output: prints confirmation and returns ``None``.
+    """
     add_impl_command(source, user_root=USER_ROOT)
 
 

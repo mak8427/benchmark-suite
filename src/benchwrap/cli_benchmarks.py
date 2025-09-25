@@ -17,7 +17,11 @@ from .cli_constants import EXECUTORS_PKG, USER_ROOT
 
 
 def _iter_user_content(user_root: pathlib.Path | None = None) -> tuple[list[str], list[str]]:
-    """Return lists of user-provided Python files and benchmark directories."""
+    """Discover user-provided benchmarks under ``user_root``.
+
+    Input: optional override for the benchmark root directory.
+    Output: tuple of (list of module stems, list of directory names) found beneath the root.
+    """
     root = pathlib.Path(user_root) if user_root is not None else USER_ROOT
     user_py_files: list[str] = []
     user_directories: list[str] = []
@@ -31,7 +35,11 @@ def _iter_user_content(user_root: pathlib.Path | None = None) -> tuple[list[str]
 
 
 def old_list_impl(start: str, show_dir: bool, subprocess_module=None) -> None:
-    """Interactively browse benchmark files and optionally sub-directories."""
+    """Interactive file browser for legacy benchmark discovery.
+
+    Input: ``start`` path to explore, ``show_dir`` flag, optional subprocess shim.
+    Output: executes chosen script and prints results; returns ``None``.
+    """
     proc = subprocess_module or subprocess
 
     def browse(path: pathlib.Path) -> None:
@@ -89,7 +97,11 @@ def old_list_impl(start: str, show_dir: bool, subprocess_module=None) -> None:
 
 
 def list_impl(user_root: pathlib.Path | None = None) -> None:
-    """List available built-in and user-provided benchmarks."""
+    """List built-in and user benchmarks.
+
+    Input: optional user benchmark directory override.
+    Output: writes details to stdout; no return value.
+    """
     root = res.files(EXECUTORS_PKG)
     pkg_modules = [p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"]
 
@@ -120,7 +132,11 @@ def run_impl(
     user_root: pathlib.Path | None = None,
     subprocess_module=None,
 ):
-    """Drive the benchmark run command using the provided arguments."""
+    """Execute the selected benchmark with optional SLURM arguments.
+
+    Input: benchmark identifiers, SLURM partition/node settings, root override, subprocess shim.
+    Output: runs the appropriate command and returns ``None``.
+    """
     user_root_path = pathlib.Path(user_root) if user_root is not None else USER_ROOT
     proc = subprocess_module or subprocess
     effective_partition = opt_partition if opt_partition is not None else partition
@@ -194,7 +210,11 @@ def run_impl(
 
 
 def add_impl_command(source: str, user_root: pathlib.Path | None = None) -> None:
-    """Add a new benchmark source to the user benchmark directory."""
+    """Copy a new benchmark into the user benchmark directory.
+
+    Input: path to source file/folder and optional target root override.
+    Output: echoes success message; returns ``None``.
+    """
     target_root = pathlib.Path(user_root) if user_root is not None else USER_ROOT
     src = pathlib.Path(source).resolve()
     dest = add_impl(src, target_root)

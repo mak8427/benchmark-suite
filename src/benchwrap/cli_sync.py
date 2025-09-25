@@ -23,7 +23,11 @@ from .cli_progress import (
 
 
 def list_files_upload() -> list[tuple[str, str]]:
-    """Collect all upload candidates under USER_ROOT (skip token files)."""
+    """Walk ``USER_ROOT`` and collect every file that should be uploaded.
+
+    Input: none (always scans the configured user root).
+    Output: list of ``(absolute_path, relative_archive_name)`` tuples.
+    """
     files: list[tuple[str, str]] = []
     for root, _, filenames in os.walk(USER_ROOT):
         for filename in filenames:
@@ -37,7 +41,11 @@ def list_files_upload() -> list[tuple[str, str]]:
 
 
 def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
-    """Upload a single file with inline progress feedback."""
+    """Push one file to remote storage with inline progress feedback.
+
+    Input: local ``filepath``, relative ``archive_name``, and bearer ``access_token``.
+    Output: ``True`` on success, ``False`` on any failure path.
+    """
     object_name = archive_name.replace(os.sep, "/").lstrip("/")[:256]
 
     response = requests.post(
@@ -89,7 +97,11 @@ def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
 
 
 def upload_one(index: int, access_token: str, filepath: str, object_name: str) -> tuple[str, bool]:
-    """Upload a single file and refresh the indexed row in the progress table."""
+    """Upload one file while updating the row ``index`` in the progress table.
+
+    Input: row index, auth token, local path, and S3-style object name.
+    Output: tuple of ``(object_name, success_flag)``.
+    """
     session = requests.Session()
     session.headers.update({"Authorization": f"Bearer {access_token}"})
 
@@ -147,7 +159,11 @@ def upload_many(
     indexed_files: Iterable[tuple[int, tuple[str, str]]],
     workers: int = 4,
 ) -> list[tuple[str, bool]]:
-    """Upload many files concurrently using a thread pool."""
+    """Upload multiple files concurrently using a worker pool.
+
+    Input: access token, iterable of ``(row_index, file_tuple)`` pairs, worker count.
+    Output: list of ``(object_name, success_flag)`` results collected from workers.
+    """
     results: list[tuple[str, bool]] = []
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
@@ -166,14 +182,22 @@ def upload_many(
 
 
 def _human_readable_size(num_bytes: int) -> str:
-    """Convert a byte count into MiB for summaries."""
+    """Convert a byte count to a MiB string for human consumption.
+
+    Input: byte count as an integer.
+    Output: string formatted as ``"<value> MiB"`` with one decimal place.
+    """
     return f"{num_bytes / (1024 * 1024):.1f} MiB"
 
 
 @click.command()
 @click.option("-j", "--jobs", type=int, default=4, show_default=True, help="Parallel uploads")
 def sync(jobs: int):
-    """Synchronize local benchmarks with the remote storage backend."""
+    """Synchronize user benchmarks with remote storage.
+
+    Input: number of parallel upload jobs to run.
+    Output: boolean success indicator printed alongside progress output.
+    """
     access_token = None
     if not registered():
         click.echo("No registration found. Please register first.")
