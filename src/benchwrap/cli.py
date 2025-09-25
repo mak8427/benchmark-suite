@@ -30,7 +30,10 @@ from benchwrap.core import add_impl
 # Configuration constants
 BENCH_PKG = "benchwrap.benchmarks"
 EXECUTORS_PKG = "benchwrap.executors"
-DATA_DIR = pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share")) / "benchwrap"
+DATA_DIR = (
+    pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
+    / "benchwrap"
+)
 TOK_FILE = DATA_DIR / "tokens"
 USER_ROOT = (
     pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
@@ -342,8 +345,7 @@ def register() -> str | bool:
         return False
 
     response = requests.post(
-        f"{BASE}/auth/register",
-        json={"username": username, "password": password}
+        f"{BASE}/auth/register", json={"username": username, "password": password}
     )
     if response.status_code != 201:
         click.echo(f"Registration failed: {response.text}")
@@ -399,8 +401,7 @@ def login() -> str | bool:
     username = click.prompt("Username", type=str)
     password = click.prompt("Password", hide_input=True)
     response = requests.post(
-        f"{BASE}/auth/password",
-        params={"u": username, "p": password}
+        f"{BASE}/auth/password", params={"u": username, "p": password}
     )
     if response.status_code != 200:
         click.echo(f"Login failed: {response.text}")
@@ -451,10 +452,12 @@ def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
         f"{BASE}/storage/presign/upload",
         params={"object_name": object_name},
         headers={"Authorization": f"Bearer {access_token}"},
-        timeout=(10, 30)
+        timeout=(10, 30),
     )
     if response.status_code != 200:
-        click.echo(f"Presign failed: {object_name}: {response.status_code} {response.text}")
+        click.echo(
+            f"Presign failed: {object_name}: {response.status_code} {response.text}"
+        )
         return False
 
     upload_url = response.json()["url"]
@@ -467,21 +470,21 @@ def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
             upload_url,
             data=b"",
             headers={"Content-Type": content_type, "Content-Length": "0"},
-            timeout=(10, 30)
+            timeout=(10, 30),
         )
     else:
         # Upload with progress tracking
         start_time = time.time()
         progress_file = ProgressFile(
             filepath,
-            lambda sent, total: _progress_line(object_name, sent, total, start_time)
+            lambda sent, total: _progress_line(object_name, sent, total, start_time),
         )
         try:
             put_response = requests.put(
                 upload_url,
                 data=progress_file,
                 headers={"Content-Type": content_type},
-                timeout=(10, None)
+                timeout=(10, None),
             )
         finally:
             progress_file.close()
@@ -494,7 +497,9 @@ def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
     return success
 
 
-def upload_one(index: int, access_token: str, filepath: str, object_name: str) -> tuple[str, bool]:
+def upload_one(
+    index: int, access_token: str, filepath: str, object_name: str
+) -> tuple[str, bool]:
     """
     Upload a single file with table-based progress display.
 
@@ -514,7 +519,7 @@ def upload_one(index: int, access_token: str, filepath: str, object_name: str) -
     response = session.post(
         f"{BASE}/storage/presign/upload",
         params={"object_name": object_name},
-        timeout=(10, 30)
+        timeout=(10, 30),
     )
     if response.status_code != 200:
         table_update(index, f"✗ {object_name}  [presign {response.status_code}]")
@@ -530,37 +535,46 @@ def upload_one(index: int, access_token: str, filepath: str, object_name: str) -
             upload_url,
             data=b"",
             headers={"Content-Type": content_type, "Content-Length": "0"},
-            timeout=(10, 30)
+            timeout=(10, 30),
         )
-        table_update(index, f"{object_name[:24]:<24} ✓ zero-byte [{put_response.status_code}]")
+        table_update(
+            index, f"{object_name[:24]:<24} ✓ zero-byte [{put_response.status_code}]"
+        )
         return object_name, put_response.ok
 
     # Upload with animated progress
     start_time = time.time()
     progress_file = ProgressFile(
         filepath,
-        lambda sent, total: table_update(index, pac_line(object_name, sent, total, start_time))
+        lambda sent, total: table_update(
+            index, pac_line(object_name, sent, total, start_time)
+        ),
     )
     try:
         put_response = requests.put(
             upload_url,
             data=progress_file,
             headers={"Content-Type": content_type, "Content-Length": str(file_size)},
-            timeout=(10, None)
+            timeout=(10, None),
         )
     finally:
         progress_file.close()
 
     # Update final status
     final_status = (
-        f"{object_name[:24]:<24} ✓ done" if put_response.ok
+        f"{object_name[:24]:<24} ✓ done"
+        if put_response.ok
         else f"{object_name[:24]:<24} ✗ [{put_response.status_code}]"
     )
     table_update(index, final_status)
     return object_name, put_response.ok
 
 
-def upload_many(access_token: str, indexed_files: list[tuple[int, tuple[str, str]]], workers: int = 4) -> list[tuple[str, bool]]:
+def upload_many(
+    access_token: str,
+    indexed_files: list[tuple[int, tuple[str, str]]],
+    workers: int = 4,
+) -> list[tuple[str, bool]]:
     """
     Upload multiple files concurrently using thread pool.
 
@@ -580,7 +594,7 @@ def upload_many(access_token: str, indexed_files: list[tuple[int, tuple[str, str
                 idx,
                 access_token,
                 filepath,
-                relative_name.replace(os.sep, "/").lstrip("/")[:256]
+                relative_name.replace(os.sep, "/").lstrip("/")[:256],
             )
             for idx, (filepath, relative_name) in indexed_files
         ]
@@ -589,7 +603,9 @@ def upload_many(access_token: str, indexed_files: list[tuple[int, tuple[str, str
     return results
 
 
-def pac_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> str:
+def pac_line(
+    name: str, sent: int, size: int, start_time: float, width: int = 28
+) -> str:
     """
     Generate animated pacman progress line with transfer statistics.
 
@@ -648,9 +664,9 @@ def table_start(num_rows: int) -> None:
     """
     global _rows
     _rows = num_rows
-    sys.stdout.write("\n" * num_rows)      # Reserve screen space
+    sys.stdout.write("\n" * num_rows)  # Reserve screen space
     sys.stdout.write(f"\x1b[{num_rows}A")  # Move cursor up to start of table
-    sys.stdout.write("\x1b[s")             # Save cursor position
+    sys.stdout.write("\x1b[s")  # Save cursor position
     sys.stdout.flush()
 
 
@@ -663,11 +679,13 @@ def table_update(row_index: int, text: str) -> None:
         text: New text content for the row
     """
     with PRINT_LOCK:
-        sys.stdout.write("\x1b[u")                    # Restore to saved cursor position (top of table)
-        sys.stdout.write(f"\x1b[{row_index}B")       # Move down to target row
-        sys.stdout.write("\x1b[2K")                   # Clear entire line
-        sys.stdout.write(text)                        # Write new content
-        sys.stdout.write(f"\x1b[{_rows - row_index}B")  # Move cursor back to bottom of table
+        sys.stdout.write("\x1b[u")  # Restore to saved cursor position (top of table)
+        sys.stdout.write(f"\x1b[{row_index}B")  # Move down to target row
+        sys.stdout.write("\x1b[2K")  # Clear entire line
+        sys.stdout.write(text)  # Write new content
+        sys.stdout.write(
+            f"\x1b[{_rows - row_index}B"
+        )  # Move cursor back to bottom of table
         sys.stdout.flush()
 
 
@@ -685,7 +703,7 @@ class ProgressFile:
             filepath: Path to the file to wrap
             progress_callback: Function called with (bytes_sent, total_size)
         """
-        self.file_handle = open(filepath, 'rb')
+        self.file_handle = open(filepath, "rb")
         self.size = os.path.getsize(filepath)
         self.bytes_sent = 0
         self.progress_callback = progress_callback
@@ -715,7 +733,9 @@ class ProgressFile:
         self.file_handle.close()
 
 
-def _progress_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> None:
+def _progress_line(
+    name: str, sent: int, size: int, start_time: float, width: int = 28
+) -> None:
     """
     Display progress line with pacman animation that overwrites itself.
 
@@ -744,12 +764,12 @@ def _progress_line(name: str, sent: int, size: int, start_time: float, width: in
     rail = []
     for i in range(width):
         if i < position:
-            rail.append("-")         # Eaten track
+            rail.append("-")  # Eaten track
         elif (i - position) % 3 == 0:
-            rail.append("o")         # Pellets ahead
+            rail.append("o")  # Pellets ahead
         else:
-            rail.append(" ")         # Gaps
-    rail[position] = mouth           # Pacman position
+            rail.append(" ")  # Gaps
+    rail[position] = mouth  # Pacman position
     progress_bar = "".join(rail)
 
     # Create line that overwrites itself (key fix: \r at the end, no \n)
@@ -778,7 +798,9 @@ def _human_readable_size(num_bytes: int) -> str:
 
 
 @benchwrap.command()
-@click.option("-j", "--jobs", type=int, default=4, show_default=True, help="Parallel uploads")
+@click.option(
+    "-j", "--jobs", type=int, default=4, show_default=True, help="Parallel uploads"
+)
 def sync(jobs: int):
     """
     Synchronize local benchmark files with remote storage.
