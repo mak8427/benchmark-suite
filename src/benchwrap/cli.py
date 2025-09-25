@@ -5,14 +5,18 @@ import pkgutil
 import shutil
 import string
 import subprocess
-import requests
+
 import click
+import requests
 
 from benchwrap.core import add_impl
 
 BENCH_PKG = "benchwrap.benchmarks"
 EXECUTORS_PKG = "benchwrap.executors"
-DATA_DIR = pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share")) / "benchwrap"
+DATA_DIR = (
+    pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
+    / "benchwrap"
+)
 TOK_FILE = DATA_DIR / "tokens"
 USER_ROOT = (
     pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
@@ -253,44 +257,50 @@ def add(source):
     click.echo(f"✔ Added {dest.name}.  Run `benchwrap list` to see it.")
 
 
-
-
-
-
 def ensure_data_dir():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if not TOK_FILE.exists():
         TOK_FILE.touch(mode=0o600)
 
 
-
 def register():
     ensure_data_dir()
-    import requests, click
+    import click
+    import requests
+
     u = click.prompt("Username", type=str)
     p = click.prompt("Password", hide_input=True)
     if p != click.prompt("Re-enter Password", hide_input=True):
-        click.echo("Passwords do not match!"); return False
-    r = requests.post("http://141.5.110.112:7800/auth/register",
-                      json={"username": u, "password": p})
+        click.echo("Passwords do not match!")
+        return False
+    r = requests.post(
+        "http://141.5.110.112:7800/auth/register", json={"username": u, "password": p}
+    )
     if r.status_code != 201:
-        click.echo(f"Registration failed: {r.text}"); return False
+        click.echo(f"Registration failed: {r.text}")
+        return False
     data = r.json()
     TOK_FILE.write_text(data["refresh"])
     click.echo("✔ Registration successful.")
     return data["access"]
 
+
 def registered():
     return TOK_FILE.exists() and TOK_FILE.read_text().strip() != ""
 
+
 def get_access_token():
-    import requests, click
+    import click
+    import requests
+
     if not TOK_FILE.exists():
-        click.echo("No registration found. Please register first."); return False
+        click.echo("No registration found. Please register first.")
+        return False
     rid = TOK_FILE.read_text().strip()
     r = requests.post("http://141.5.110.112:7800/auth/refresh", params={"rid": rid})
     if r.status_code != 200:
-        click.echo(f"Token refresh failed: {r.text}"); return False
+        click.echo(f"Token refresh failed: {r.text}")
+        return False
     data = r.json()
     TOK_FILE.write_text(data["refresh"])
     return data["access"]
@@ -298,17 +308,22 @@ def get_access_token():
 
 def login():
     ensure_data_dir()
-    import requests, click
+    import click
+    import requests
+
     u = click.prompt("Username", type=str)
     p = click.prompt("Password", hide_input=True)
-    r = requests.post("http://141.5.110.112:7800/auth/password",
-                      params={"u": u, "p": p})
+    r = requests.post(
+        "http://141.5.110.112:7800/auth/password", params={"u": u, "p": p}
+    )
     if r.status_code != 200:
-        click.echo(f"Login failed: {r.text}"); return False
+        click.echo(f"Login failed: {r.text}")
+        return False
     data = r.json()
     TOK_FILE.write_text(data["refresh"])
     click.echo("✔ Login successful.")
     return data["access"]
+
 
 def list_files_upload():
     files = []
@@ -320,28 +335,24 @@ def list_files_upload():
             arcname = os.path.relpath(filepath, DATA_DIR)
             files.append((filepath, arcname))
     return files
+
+
 @benchwrap.command()
 def sync():
     access = None
     if not registered():
         access = register()
-        if not access: click.echo("Registration failed. Cannot sync."); return False
+        if not access:
+            click.echo("Registration failed. Cannot sync.")
+            return False
     if not access:
         access = get_access_token()
         if not access:
             access = login()
             if not access:
-                click.echo("Login failed. Cannot sync."); return False
-
-
-
-
-
-
-
-
+                click.echo("Login failed. Cannot sync.")
+                return False
 
     click.echo("Syncing data directory to remote storage…")
     # Placeholder implementation
     click.echo("✔ Sync complete.")
-
