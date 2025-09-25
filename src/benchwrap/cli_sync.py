@@ -12,24 +12,24 @@ import click
 import requests
 
 from .cli_auth import get_access_token, login, register, registered
-from .cli_constants import BASE_URL, USER_ROOT
+from .cli_constants import BASE_URL, JOBS_DEFAULT
 from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
                            table_start, table_update)
 
 
 def list_files_upload() -> list[tuple[str, str]]:
-    """Walk ``USER_ROOT`` and collect every file that should be uploaded.
+    """Walk ``JOBS_DEFAULT`` and collect every file that should be uploaded.
 
     Input: none (always scans the configured user root).
     Output: list of ``(absolute_path, relative_archive_name)`` tuples.
     """
     files: list[tuple[str, str]] = []
-    for root, _, filenames in os.walk(USER_ROOT):
+    for root, _, filenames in os.walk(JOBS_DEFAULT):
         for filename in filenames:
             if filename == "tokens":
                 continue
             filepath = os.path.join(root, filename)
-            archive_name = os.path.relpath(filepath, USER_ROOT)
+            archive_name = os.path.relpath(filepath, JOBS_DEFAULT)
             files.append((filepath, archive_name))
     click.echo(f"Found {len(files)} files to upload.")
     return files
