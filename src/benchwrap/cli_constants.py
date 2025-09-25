@@ -16,5 +16,5 @@ USER_ROOT = (
     pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
     / "benchwrap/benchmarks"
 )
-BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/benchmarks"
+BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/jobs"
 BASE_URL = "http://141.5.110.112:7800"
