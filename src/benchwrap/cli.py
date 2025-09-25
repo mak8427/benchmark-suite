@@ -13,26 +13,16 @@ import subprocess
 
 import click
 
-from .cli_auth import ensure_data_dir, get_access_token, login, register, registered
-from .cli_benchmarks import add_impl_command, list_impl, old_list_impl, run_impl
-from .cli_constants import BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR, EXECUTORS_PKG, TOK_FILE, USER_ROOT
-from .cli_progress import (
-    PRINT_LOCK,
-    ProgressFile,
-    inline_progress_line,
-    pac_line,
-    safe_print,
-    table_start,
-    table_update,
-)
-from .cli_sync import (
-    _human_readable_size,
-    list_files_upload,
-    sync,
-    upload_file,
-    upload_many,
-    upload_one,
-)
+from .cli_auth import (ensure_data_dir, get_access_token, login, register,
+                       registered)
+from .cli_benchmarks import (add_impl_command, list_impl, old_list_impl,
+                             run_impl)
+from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
+                            EXECUTORS_PKG, TOK_FILE, USER_ROOT)
+from .cli_progress import (PRINT_LOCK, ProgressFile, inline_progress_line,
+                           pac_line, safe_print, table_start, table_update)
+from .cli_sync import (_human_readable_size, list_files_upload, sync,
+                       upload_file, upload_many, upload_one)
 
 
 @click.group()
@@ -43,6 +33,7 @@ def benchwrap():
     Output: returns a Click command group object.
     """
 
+
 @benchwrap.command("old_list")
 @click.argument(
     "start",
@@ -50,7 +41,9 @@ def benchwrap():
     default="src/benchmarks",
     type=click.Path(file_okay=False, dir_okay=True),
 )
-@click.option("--dir/--no-dir", "show_dir", default=False, help="Also list sub-directories.")
+@click.option(
+    "--dir/--no-dir", "show_dir", default=False, help="Also list sub-directories."
+)
 def old_list(start: str, show_dir: bool) -> None:
     """Legacy interactive browser for benchmark files.
 
@@ -74,8 +67,12 @@ def _list():
 @click.argument("name", required=False)
 @click.argument("partition", required=False)
 @click.argument("nodes", required=False)
-@click.option("-p", "--partition", "opt_partition", required=False, help="SLURM partition")
-@click.option("-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes")
+@click.option(
+    "-p", "--partition", "opt_partition", required=False, help="SLURM partition"
+)
+@click.option(
+    "-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes"
+)
 def run(name, partition, nodes, opt_partition, opt_nodes):
     """Execute a benchmark matching ``name``.
 
