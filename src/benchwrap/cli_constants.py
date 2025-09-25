@@ -7,7 +7,10 @@ import pathlib
 
 BENCH_PKG = "benchwrap.benchmarks"
 EXECUTORS_PKG = "benchwrap.executors"
-DATA_DIR = pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share")) / "benchwrap"
+DATA_DIR = (
+    pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
+    / "benchwrap"
+)
 TOK_FILE = DATA_DIR / "tokens"
 USER_ROOT = (
     pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))

@@ -64,7 +64,9 @@ class ProgressFile:
         self.file_handle.close()
 
 
-def pac_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> str:
+def pac_line(
+    name: str, sent: int, size: int, start_time: float, width: int = 28
+) -> str:
     """Return an animated pacman progress bar for table output."""
     percentage = 0 if size == 0 else int(sent * 100 / size)
     megabytes_sent = sent / 1048576
@@ -97,7 +99,9 @@ def pac_line(name: str, sent: int, size: int, start_time: float, width: int = 28
     )
 
 
-def inline_progress_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> str:
+def inline_progress_line(
+    name: str, sent: int, size: int, start_time: float, width: int = 28
+) -> str:
     """Return a carriage-return terminated progress line for inline updates."""
     percentage = 0 if size == 0 else int(sent * 100 / size)
     megabytes_sent = sent / 1048576
