@@ -16,7 +16,9 @@ from benchwrap.core import add_impl
 from .cli_constants import EXECUTORS_PKG, USER_ROOT
 
 
-def _iter_user_content(user_root: pathlib.Path | None = None) -> tuple[list[str], list[str]]:
+def _iter_user_content(
+    user_root: pathlib.Path | None = None,
+) -> tuple[list[str], list[str]]:
     """Discover user-provided benchmarks under ``user_root``.
 
     Input: optional override for the benchmark root directory.
@@ -74,14 +76,18 @@ def old_list_impl(start: str, show_dir: bool, subprocess_module=None) -> None:
                 click.echo(f"{label}. {dir_path.name}")
         click.echo("")
 
-        choice = click.prompt("Select (empty to quit)", default="", show_default=False).strip()
+        choice = click.prompt(
+            "Select (empty to quit)", default="", show_default=False
+        ).strip()
         if not choice:
             return
 
         if choice.isdigit() and 1 <= int(choice) <= len(files):
             target = files[int(choice) - 1]
             click.echo(f"▶ Running {target.name}")
-            result = proc.run([sys.executable, str(target)], capture_output=True, text=True)
+            result = proc.run(
+                [sys.executable, str(target)], capture_output=True, text=True
+            )
             click.echo(result.stdout)
             if result.stderr:
                 click.echo(result.stderr, err=True)
@@ -103,7 +109,9 @@ def list_impl(user_root: pathlib.Path | None = None) -> None:
     Output: writes details to stdout; no return value.
     """
     root = res.files(EXECUTORS_PKG)
-    pkg_modules = [p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"]
+    pkg_modules = [
+        p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
+    ]
 
     user_py_files, user_directories = _iter_user_content(user_root)
 
@@ -143,7 +151,9 @@ def run_impl(
     effective_nodes = opt_nodes if opt_nodes is not None else nodes
 
     root = res.files(EXECUTORS_PKG)
-    pkg_modules = [p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"]
+    pkg_modules = [
+        p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
+    ]
     user_py_files, user_directories = _iter_user_content(user_root_path)
 
     all_benchmark_names = pkg_modules + user_py_files + user_directories
@@ -162,7 +172,11 @@ def run_impl(
             for directory in user_directories:
                 click.echo(f"  - {directory}  (dir)")
 
-    choice = name.strip() if name else click.prompt("Enter name", default="", show_default=False).strip()
+    choice = (
+        name.strip()
+        if name
+        else click.prompt("Enter name", default="", show_default=False).strip()
+    )
     if not choice:
         return
 

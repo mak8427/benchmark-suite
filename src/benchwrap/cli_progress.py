@@ -80,7 +80,9 @@ class ProgressFile:
         self.file_handle.close()
 
 
-def pac_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> str:
+def pac_line(
+    name: str, sent: int, size: int, start_time: float, width: int = 28
+) -> str:
     """Build a pacman-style progress string for tabular updates.
 
     Input: object name, bytes sent/total, start timestamp, and optional width.
@@ -117,7 +119,9 @@ def pac_line(name: str, sent: int, size: int, start_time: float, width: int = 28
     )
 
 
-def inline_progress_line(name: str, sent: int, size: int, start_time: float, width: int = 28) -> str:
+def inline_progress_line(
+    name: str, sent: int, size: int, start_time: float, width: int = 28
+) -> str:
     """Build an inline progress string ending with ``\r`` for streaming.
 
     Input: object name, bytes sent/total, start timestamp, optional bar width.

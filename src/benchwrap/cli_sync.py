@@ -13,13 +13,8 @@ import requests
 
 from .cli_auth import get_access_token, login, register, registered
 from .cli_constants import BASE_URL, USER_ROOT
-from .cli_progress import (
-    ProgressFile,
-    inline_progress_line,
-    pac_line,
-    table_start,
-    table_update,
-)
+from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
+                           table_start, table_update)
 
 
 def list_files_upload() -> list[tuple[str, str]]:
@@ -55,7 +50,9 @@ def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
         timeout=(10, 30),
     )
     if response.status_code != 200:
-        click.echo(f"Presign failed: {object_name}: {response.status_code} {response.text}")
+        click.echo(
+            f"Presign failed: {object_name}: {response.status_code} {response.text}"
+        )
         return False
 
     upload_url = response.json()["url"]
@@ -96,7 +93,9 @@ def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
     return success
 
 
-def upload_one(index: int, access_token: str, filepath: str, object_name: str) -> tuple[str, bool]:
+def upload_one(
+    index: int, access_token: str, filepath: str, object_name: str
+) -> tuple[str, bool]:
     """Upload one file while updating the row ``index`` in the progress table.
 
     Input: row index, auth token, local path, and S3-style object name.
@@ -125,7 +124,9 @@ def upload_one(index: int, access_token: str, filepath: str, object_name: str) -
             headers={"Content-Type": content_type, "Content-Length": "0"},
             timeout=(10, 30),
         )
-        table_update(index, f"{object_name[:24]:<24} ✓ zero-byte [{put_response.status_code}]")
+        table_update(
+            index, f"{object_name[:24]:<24} ✓ zero-byte [{put_response.status_code}]"
+        )
         return object_name, put_response.ok
 
     start_time = time.time()
@@ -191,7 +192,9 @@ def _human_readable_size(num_bytes: int) -> str:
 
 
 @click.command()
-@click.option("-j", "--jobs", type=int, default=4, show_default=True, help="Parallel uploads")
+@click.option(
+    "-j", "--jobs", type=int, default=4, show_default=True, help="Parallel uploads"
+)
 def sync(jobs: int):
     """Synchronize user benchmarks with remote storage.
 
