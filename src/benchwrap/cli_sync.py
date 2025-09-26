@@ -58,7 +58,7 @@ def upload_one(
     upload_url = response.json()["url"]
 
     if TUNNELLING_URL:
-        upload_url = response.json()["url"].replace(SERVER_URL, TUNNELLING_URL)
+        upload_url = response.json()["url"].replace(SERVER_URL, BASE_URL)
     content_type = mimetypes.guess_type(object_name)[0] or "application/octet-stream"
     file_size = os.path.getsize(filepath)
 
