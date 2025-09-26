@@ -20,4 +20,6 @@ JOBS_DEFAULT = DATA_DIR / "jobs"
 BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/benchmarks"
 SERVER_URL = "http://141.5.110.112"  # used as reference don't change
 BASE_URL = "http://141.5.110.112:7800"
+MINIO_TUNNEL_URL = "http://141.5.110.112:7800"
+
 TUNNELLING_URL = False
