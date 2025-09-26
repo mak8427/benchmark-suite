@@ -12,7 +12,7 @@ import click
 import requests
 
 from .cli_auth import get_access_token, login, register, registered
-from .cli_constants import BASE_URL, JOBS_DEFAULT
+from .cli_constants import BASE_URL, JOBS_DEFAULT, TUNNELLING_URL, SERVER_URL
 from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
                            table_start, table_update)
 
@@ -35,64 +35,6 @@ def list_files_upload() -> list[tuple[str, str]]:
     return files
 
 
-def upload_file(filepath: str, archive_name: str, access_token: str) -> bool:
-    """Push one file to remote storage with inline progress feedback.
-
-    Input: local ``filepath``, relative ``archive_name``, and bearer ``access_token``.
-    Output: ``True`` on success, ``False`` on any failure path.
-    """
-    object_name = archive_name.replace(os.sep, "/").lstrip("/")[:256]
-
-    response = requests.post(
-        f"{BASE_URL}/storage/presign/upload",
-        params={"object_name": object_name},
-        headers={"Authorization": f"Bearer {access_token}"},
-        timeout=(10, 30),
-    )
-    if response.status_code != 200:
-        click.echo(
-            f"Presign failed: {object_name}: {response.status_code} {response.text}"
-        )
-        return False
-
-    upload_url = response.json()["url"]
-    content_type = mimetypes.guess_type(object_name)[0] or "application/octet-stream"
-    file_size = os.path.getsize(filepath)
-
-    if file_size == 0:
-        put_response = requests.put(
-            upload_url,
-            data=b"",
-            headers={"Content-Type": content_type, "Content-Length": "0"},
-            timeout=(10, 30),
-        )
-    else:
-        start_time = time.time()
-        progress_file = ProgressFile(
-            filepath,
-            lambda sent, total: click.echo(
-                inline_progress_line(object_name, sent, total, start_time),
-                nl=False,
-            ),
-        )
-        try:
-            put_response = requests.put(
-                upload_url,
-                data=progress_file,
-                headers={"Content-Type": content_type},
-                timeout=(10, None),
-            )
-        finally:
-            progress_file.close()
-            click.echo("")
-
-    success = put_response.status_code in (200, 201, 204)
-    click.echo(("✓ " if success else "✗ ") + object_name)
-    if not success:
-        click.echo(f"    error: {put_response.status_code} {put_response.text[:200]}")
-    return success
-
-
 def upload_one(
     index: int, access_token: str, filepath: str, object_name: str
 ) -> tuple[str, bool]:
@@ -113,7 +55,14 @@ def upload_one(
         table_update(index, f"✗ {object_name}  [presign {response.status_code}]")
         return object_name, False
 
+
+
     upload_url = response.json()["url"]
+
+    if TUNNELLING_URL:
+        upload_url = response.json()["url"].replace(
+            SERVER_URL , TUNNELLING_URL
+        )
     content_type = mimetypes.guess_type(object_name)[0] or "application/octet-stream"
     file_size = os.path.getsize(filepath)
 

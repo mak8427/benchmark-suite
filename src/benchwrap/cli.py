@@ -22,7 +22,7 @@ from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
 from .cli_progress import (PRINT_LOCK, ProgressFile, inline_progress_line,
                            pac_line, safe_print, table_start, table_update)
 from .cli_sync import (_human_readable_size, list_files_upload, sync,
-                       upload_file, upload_many, upload_one)
+                       upload_many, upload_one)
 
 
 @click.group()
@@ -130,7 +130,6 @@ __all__ = [
     "get_access_token",
     "login",
     "list_files_upload",
-    "upload_file",
     "upload_one",
     "upload_many",
     "PRINT_LOCK",
