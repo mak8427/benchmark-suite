@@ -12,7 +12,8 @@ import click
 import requests
 
 from .cli_auth import get_access_token, login, register, registered
-from .cli_constants import BASE_URL, JOBS_DEFAULT, SERVER_URL, TUNNELLING_URL, MINIO_TUNNEL_URL
+from .cli_constants import (BASE_URL, JOBS_DEFAULT, MINIO_TUNNEL_URL,
+                            SERVER_URL, TUNNELLING_URL)
 from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
                            table_start, table_update)
 
@@ -58,7 +59,9 @@ def upload_one(
     upload_url = response.json()["url"]
 
     if TUNNELLING_URL:
-        upload_url = response.json()["url"].replace(f"{SERVER_URL}:9000", MINIO_TUNNEL_URL)
+        upload_url = response.json()["url"].replace(
+            f"{SERVER_URL}:9000", MINIO_TUNNEL_URL
+        )
     content_type = mimetypes.guess_type(object_name)[0] or "application/octet-stream"
     file_size = os.path.getsize(filepath)
 
