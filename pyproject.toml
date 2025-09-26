@@ -1,6 +1,6 @@
 [project]
 name = "benchwrap"
-version = "0.3.1"
+version = "0.3.2"
 description = "CLI wrapper with energy-aware benchmarking"
 requires-python = ">=3.11"
 dependencies = [
