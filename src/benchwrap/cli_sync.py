@@ -12,8 +12,8 @@ import click
 import requests
 
 from .cli_auth import get_access_token, login, register, registered
-from .cli_constants import (BASE_URL, JOBS_DEFAULT, SLURM_DEFAULT ,MINIO_TUNNEL_URL,
-                            SERVER_URL, TUNNELLING_URL)
+from .cli_constants import (BASE_URL, JOBS_DEFAULT, MINIO_TUNNEL_URL,
+                            SERVER_URL, SLURM_DEFAULT, TUNNELLING_URL)
 from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
                            table_start, table_update)
 
