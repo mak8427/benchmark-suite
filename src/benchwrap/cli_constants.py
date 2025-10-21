@@ -17,6 +17,7 @@ USER_ROOT = (
     / "benchwrap/benchmarks"
 )
 JOBS_DEFAULT = DATA_DIR / "jobs"
+SLURM_DEFAULT = pathlib.Path("/opt/misc/profiling/u18101")
 BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/benchmarks"
 SERVER_URL = "http://141.5.110.112"  # used as reference don't change
 BASE_URL = "http://141.5.110.112:7800"
