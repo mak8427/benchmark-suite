@@ -65,7 +65,13 @@ def describe(name: str) -> None:
 @click.option(
     "-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes"
 )
-def run(name, partition, nodes, opt_partition, opt_nodes):
+@click.option(
+    "--exclusive/--no-exclusive",
+    "exclusive",
+    default=False,
+    help="Request exclusive node access for this benchmark.",
+)
+def run(name, partition, nodes, opt_partition, opt_nodes, exclusive):
     """Execute a benchmark matching ``name``.
 
     Input: optional positional/flagged arguments for benchmark name and SLURM options.
@@ -77,6 +83,7 @@ def run(name, partition, nodes, opt_partition, opt_nodes):
         nodes,
         opt_partition,
         opt_nodes,
+        exclusive,
         user_root=USER_ROOT,
         subprocess_module=subprocess,
     )

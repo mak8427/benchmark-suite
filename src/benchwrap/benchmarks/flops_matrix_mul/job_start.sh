@@ -2,7 +2,6 @@
 #SBATCH --profile=all
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1
-#SBATCH --exclusive
 
 set -euo pipefail
 module load likwid

@@ -6,7 +6,9 @@ from .utils.benchmarks_func import run_slurm_job
 
 def main():
     # Parse CLI arguments
-    p = argparse.ArgumentParser(description="Run avx512_fma benchmark via SLURM.")
+    p = argparse.ArgumentParser(
+        description="Run avx512_fma benchmark via SLURM."
+    )
     p.add_argument(
         "--partition",
         default=None,
@@ -22,12 +24,18 @@ def main():
         default=1,
         help="Number of nodes to request (default: 1).",
     )
+    p.add_argument(
+        "--exclusive",
+        action="store_true",
+        help="Request exclusive node access.",
+    )
     args = p.parse_args()
 
     run_slurm_job(
         bench_name="avx512_fma",
         partition=args.partition,
         nodes=args.nodes,
+        exclusive=args.exclusive,
     )
 
 

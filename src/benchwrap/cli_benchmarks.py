@@ -108,6 +108,7 @@ def run_impl(
     nodes,
     opt_partition,
     opt_nodes,
+    exclusive,
     user_root: pathlib.Path | None = None,
     subprocess_module=None,
 ):
@@ -157,6 +158,8 @@ def run_impl(
             command.extend(["--partition", str(effective_partition)])
         if normalized_nodes is not None:
             command.extend(["--nodes", str(normalized_nodes)])
+        if exclusive:
+            command.append("--exclusive")
         return command
 
     if choice in pkg_modules:
@@ -165,12 +168,16 @@ def run_impl(
         proc.run(extend_slurm_args(command))
 
     elif choice in user_py_files:
+        if exclusive:
+            click.echo("[warn] --exclusive ignored for user .py benchmarks.")
         target = pathlib.Path(user_root_path) / f"{choice}.py"
         click.echo(f"▶ running user py {target}")
         command = [sys.executable, str(target)]
         proc.run(extend_slurm_args(command))
 
     elif choice in user_directories:
+        if exclusive:
+            click.echo("[warn] --exclusive ignored for user directory benchmarks.")
         script = pathlib.Path(user_root_path) / choice / "job_start.sh"
         click.echo(f"▶ running {script}")
         proc.run(["bash", str(script)])

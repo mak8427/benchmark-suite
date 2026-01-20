@@ -9,7 +9,9 @@ import h5py
 import pandas as pd
 
 
-def run_slurm_job(bench_name: str, partition: str, nodes: int = 1):
+def run_slurm_job(
+    bench_name: str, partition: str, nodes: int = 1, exclusive: bool = False
+):
     """
     Runs a SLURM job for the specified benchmark name, partition, and number of nodes.
     The function submits a job using the `sbatch` command and handles potential errors
@@ -30,7 +32,7 @@ def run_slurm_job(bench_name: str, partition: str, nodes: int = 1):
             partition = ""
             print("Running No Partition provided")
 
-        job_id = sbatch_launch(bench_name, partition, nodes)
+        job_id = sbatch_launch(bench_name, partition, nodes, exclusive=exclusive)
     except subprocess.CalledProcessError as e:
         print("sbatch stderr:\n", e.stderr, "\n---")
         raise
@@ -101,7 +103,9 @@ def _make_executable(p: pathlib.Path) -> None:
     p.chmod(p.stat().st_mode | stat.S_IXUSR)
 
 
-def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -> int:
+def sbatch_launch(
+    bench_name: str, partition: str = "scc-cpu", nodes: int = 1, exclusive: bool = False
+) -> int:
     """
     Launches a benchmarking script on a SLURM cluster using the `sbatch` command. The function configures
     the SLURM batch job submission command with job-specific parameters including the benchmarking script,
@@ -124,10 +128,9 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
     """
     # Cmd definition
     script_res = res.files("benchwrap.benchmarks") / bench_name / "job_start.sh"
-    os.makedirs(
-        f"{os.environ['HOME']}/.local/share/benchwrap/jobs",
-        exist_ok=True,
-    )
+    jobs_root = pathlib.Path(f"{os.environ['HOME']}/.local/share/benchwrap/jobs")
+    job_label = f"{bench_name}-exclusive" if exclusive else bench_name
+    os.makedirs(jobs_root / job_label, exist_ok=True)
 
     with res.as_file(script_res) as script_path:
         _make_executable(script_path)
@@ -142,16 +145,18 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
         cmd += [f"--nodes={nodes}"]
 
         # Job name
-        cmd += [f"--job-name={bench_name}"]
+        cmd += [f"--job-name={job_label}"]
 
         # Output and Error
         cmd += [
             "--output",
-            f"{os.environ['HOME']}/.local/share/benchwrap/jobs/job_%j/slurm-%j.out",
+            str(jobs_root / job_label / "job_%j" / "slurm-%j.out"),
             "--error",
-            f"{os.environ['HOME']}/.local/share/benchwrap/jobs/job_%j/slurm-%j.err",
+            str(jobs_root / job_label / "job_%j" / "slurm-%j.err"),
             str(script_path),
         ]
+        if exclusive:
+            cmd += ["--exclusive"]
 
         try:
             completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -160,10 +165,7 @@ def sbatch_launch(bench_name: str, partition: str = "scc-cpu", nodes: int = 1) -
             raise
 
         job_id = int(completed.stdout.strip().split(";")[0])
-        os.makedirs(
-            f"{os.environ['HOME']}/.local/share/benchwrap/jobs/job_{job_id}",
-            exist_ok=True,
-        )
+        os.makedirs(jobs_root / job_label / f"job_{job_id}", exist_ok=True)
         subprocess.run(["scontrol", "release", str(job_id)], check=True)
         return job_id
 

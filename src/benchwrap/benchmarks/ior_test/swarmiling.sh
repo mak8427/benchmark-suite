@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-DEST="$HOME/.local/share/benchwrap/job_${SLURM_JOB_ID}"
+DEST="$HOME/.local/share/benchwrap/jobs/ior_test/job_${SLURM_JOB_ID}"
 mkdir -p "$DEST"
 
 cd "$DEST"

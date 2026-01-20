@@ -9,7 +9,7 @@ module load mpi
 
 
 
-DEST="$HOME/.local/share/benchwrap/jobs/job_${SLURM_JOB_ID}"
+DEST="$HOME/.local/share/benchwrap/jobs/ior_test/job_${SLURM_JOB_ID}"
 cd "$DEST"
 
 /home/davide.mattioli/energy//bin/python3 -u -m benchwrap.benchmarks.ior_test.launcher 1>&2
