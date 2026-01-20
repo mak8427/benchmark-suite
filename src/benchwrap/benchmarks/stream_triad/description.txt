@@ -1,0 +1,1 @@
+STREAM-like triad (a = b + scalar*c). Measures sustained memory bandwidth with a simple triad kernel and reports GB/s, useful for DRAM-bound energy efficiency. Env: STREAM_SIZE (elements), STREAM_ITERS, STREAM_SCALAR.

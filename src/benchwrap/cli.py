@@ -15,7 +15,7 @@ import click
 
 from .cli_auth import (ensure_data_dir, get_access_token, login, register,
                        registered)
-from .cli_benchmarks import add_impl_command, list_impl, run_impl
+from .cli_benchmarks import add_impl_command, describe_impl, list_impl, run_impl
 from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
                             EXECUTORS_PKG, TOK_FILE, USER_ROOT)
 from .cli_progress import (PRINT_LOCK, ProgressFile, inline_progress_line,
@@ -41,6 +41,17 @@ def _list():
     Output: prints benchmark names via Click and returns ``None``.
     """
     list_impl(USER_ROOT)
+
+
+@benchwrap.command("describe")
+@click.argument("name", required=True)
+def describe(name: str) -> None:
+    """Show a short benchmark description.
+
+    Input: benchmark name.
+    Output: prints the description text; returns ``None``.
+    """
+    describe_impl(name, user_root=USER_ROOT)
 
 
 @benchwrap.command("run")
@@ -108,6 +119,7 @@ __all__ = [
     "registered",
     "get_access_token",
     "login",
+    "describe",
     "list_files_upload",
     "upload_one",
     "upload_many",

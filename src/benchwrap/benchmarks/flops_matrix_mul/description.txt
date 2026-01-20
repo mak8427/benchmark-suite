@@ -1,0 +1,1 @@
+CPU-bound dense matrix multiplication (DGEMM). Allocates two large double-precision matrices, multiplies them using BLAS, and reports GFLOP/s. Use to estimate peak compute throughput and energy efficiency under sustained AVX/AVX-512 load.

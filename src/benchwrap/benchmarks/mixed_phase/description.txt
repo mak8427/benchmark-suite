@@ -1,0 +1,1 @@
+Alternating compute and memory phases. Runs FMA-heavy compute loops followed by streaming copies to capture average energy efficiency for mixed workloads. Env: MIXED_SIZE, MIXED_PHASES, MIXED_COMP_ITERS, MIXED_MEM_ITERS.

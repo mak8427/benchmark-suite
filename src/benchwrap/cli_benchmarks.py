@@ -61,7 +61,45 @@ def list_impl(user_root: pathlib.Path | None = None) -> None:
         for module in user_py_files:
             click.echo(f"  - {module}  (py)")
         for directory in user_directories:
-            click.echo(f"  - {directory}  (dir)")
+        click.echo(f"  - {directory}  (dir)")
+
+
+def describe_impl(name: str, user_root: pathlib.Path | None = None) -> None:
+    """Print a short description for the requested benchmark.
+
+    Input: benchmark name and optional user benchmark directory override.
+    Output: prints description text if found; otherwise prints a helpful message.
+    """
+    if not name:
+        click.echo("Provide a benchmark name.")
+        return
+
+    user_root_path = pathlib.Path(user_root) if user_root is not None else USER_ROOT
+    root = res.files(EXECUTORS_PKG)
+    pkg_modules = [
+        p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
+    ]
+    user_py_files, user_directories = _iter_user_content(user_root_path)
+    all_benchmark_names = pkg_modules + user_py_files + user_directories
+
+    choice = name.strip()
+    matches = [n for n in all_benchmark_names if n.startswith(choice)]
+    if len(matches) == 1:
+        choice = matches[0]
+
+    description_path = None
+    if choice in pkg_modules:
+        description_path = res.files("benchwrap.benchmarks") / choice / "description.txt"
+    elif choice in user_directories:
+        description_path = user_root_path / choice / "description.txt"
+
+    if description_path is None or not description_path.exists():
+        click.echo(f"No description found for '{choice}'.")
+        return
+
+    with res.as_file(description_path) as desc_file:
+        text = desc_file.read_text(encoding="utf-8").strip()
+    click.echo(text or f"No description found for '{choice}'.")
 
 
 def run_impl(

@@ -1,0 +1,1 @@
+Cache hierarchy probe with strided access. Varying working-set sizes reveal L1/L2/L3/DRAM transitions and the energy impact of cache misses.

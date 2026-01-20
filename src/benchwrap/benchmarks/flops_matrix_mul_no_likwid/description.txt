@@ -1,0 +1,1 @@
+DGEMM without LIKWID instrumentation. Provides baseline compute throughput/energy behavior without perf-counter overhead for comparison with instrumented runs.

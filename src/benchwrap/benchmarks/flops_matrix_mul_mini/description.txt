@@ -1,0 +1,1 @@
+Smaller DGEMM variant for faster runs. Exercises the same BLAS path as the full matrix multiply but with reduced memory footprint and runtime, useful for quick energy/perf checks.
