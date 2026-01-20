@@ -5,7 +5,7 @@ import time
 import numpy as np
 import psutil
 
-n = 18_000
+n = 30_000
 gb = 2 * n * n * 8 / 1e9
 print(f"Allocating two {n}x{n} matrices ≈{gb:.1f} GB", flush=True)
 

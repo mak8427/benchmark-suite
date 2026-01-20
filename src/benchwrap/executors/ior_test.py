@@ -1,7 +1,7 @@
 import argparse
-import os
 
-from .utils.benchmarks_func import *
+from .utils.benchmarks_func import (check_io500, check_ior, get_io500, get_ior,
+                                    run_slurm_job)
 
 
 def main():
@@ -12,9 +12,7 @@ def main():
         get_ior()
         assert check_ior() == True
 
-    p = argparse.ArgumentParser(
-        description="Run FLOPS matrix multiplication benchmark via SLURM."
-    )
+    p = argparse.ArgumentParser(description="Run ior_test benchmark via SLURM.")
     p.add_argument(
         "--partition",
         default=None,
@@ -30,12 +28,18 @@ def main():
         default=1,
         help="Number of nodes to request (default: 1).",
     )
+    p.add_argument(
+        "--exclusive",
+        action="store_true",
+        help="Request exclusive node access.",
+    )
     args = p.parse_args()
 
     run_slurm_job(
         bench_name="ior_test",
         partition=args.partition,
         nodes=args.nodes,
+        exclusive=args.exclusive,
     )
 
 

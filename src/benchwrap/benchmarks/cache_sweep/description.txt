@@ -1,0 +1,1 @@
+Working-set size sweep across powers of two. Times strided updates at increasing sizes to map cache-to-DRAM performance and energy transitions. Env: CACHE_MIN_POW, CACHE_MAX_POW, CACHE_ITERS, CACHE_STRIDE.

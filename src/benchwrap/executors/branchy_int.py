@@ -6,9 +6,7 @@ from .utils.benchmarks_func import run_slurm_job
 
 def main():
     # Parse CLI arguments
-    p = argparse.ArgumentParser(
-        description="Run FLOPS matrix multiplication (mini) benchmark via SLURM."
-    )
+    p = argparse.ArgumentParser(description="Run branchy_int benchmark via SLURM.")
     p.add_argument(
         "--partition",
         default=None,
@@ -32,7 +30,7 @@ def main():
     args = p.parse_args()
 
     run_slurm_job(
-        bench_name="flops_matrix_mul_mini",
+        bench_name="branchy_int",
         partition=args.partition,
         nodes=args.nodes,
         exclusive=args.exclusive,

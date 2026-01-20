@@ -1,0 +1,1 @@
+Vector FMA loop using NumPy to drive SIMD units. Repeated a*b+c operations approximate peak FMA throughput and highlight energy efficiency under compute-saturated AVX/AVX-512 execution. Env: AVX_SIZE (elements), AVX_ITERS (loop count).

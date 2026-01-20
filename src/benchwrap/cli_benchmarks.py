@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib.resources as res
 import os
 import pathlib
-import string
 import subprocess
 import sys
 
@@ -34,72 +33,6 @@ def _iter_user_content(
             elif path.is_dir() and (path / "job_start.sh").exists():
                 user_directories.append(path.name)
     return user_py_files, user_directories
-
-
-def old_list_impl(start: str, show_dir: bool, subprocess_module=None) -> None:
-    """Interactive file browser for legacy benchmark discovery.
-
-    Input: ``start`` path to explore, ``show_dir`` flag, optional subprocess shim.
-    Output: executes chosen script and prints results; returns ``None``.
-    """
-    proc = subprocess_module or subprocess
-
-    def browse(path: pathlib.Path) -> None:
-        if not path.exists():
-            click.echo(f"[ERR] Path {path} does not exist")
-            return
-
-        escape_chars = (".", "_")
-        files = [
-            p
-            for p in path.iterdir()
-            if p.is_file() and p.suffix == ".py" and p.name[0] not in escape_chars
-        ]
-        dirs = (
-            [p for p in path.iterdir() if p.is_dir() and p.name[0] not in escape_chars]
-            if show_dir
-            else []
-        )
-
-        if not files and not dirs:
-            click.echo("(empty)")
-            return
-
-        if files:
-            click.echo("- files ----------")
-            for i, file_path in enumerate(files, 1):
-                click.echo(f"{i:2}. {file_path.name}")
-        if dirs:
-            click.echo("- directories -----")
-            for i, dir_path in enumerate(dirs):
-                label = string.ascii_lowercase[i] if i < 26 else f"[{i}]"
-                click.echo(f"{label}. {dir_path.name}")
-        click.echo("")
-
-        choice = click.prompt(
-            "Select (empty to quit)", default="", show_default=False
-        ).strip()
-        if not choice:
-            return
-
-        if choice.isdigit() and 1 <= int(choice) <= len(files):
-            target = files[int(choice) - 1]
-            click.echo(f"▶ Running {target.name}")
-            result = proc.run(
-                [sys.executable, str(target)], capture_output=True, text=True
-            )
-            click.echo(result.stdout)
-            if result.stderr:
-                click.echo(result.stderr, err=True)
-            click.echo(f"Exit code: {result.returncode}")
-
-        elif show_dir and choice in string.ascii_lowercase[: len(dirs)]:
-            idx = string.ascii_lowercase.index(choice)
-            browse(dirs[idx])
-        else:
-            click.echo("Invalid input!")
-
-    browse(pathlib.Path(start).expanduser().resolve())
 
 
 def list_impl(user_root: pathlib.Path | None = None) -> None:
@@ -131,12 +64,53 @@ def list_impl(user_root: pathlib.Path | None = None) -> None:
             click.echo(f"  - {directory}  (dir)")
 
 
+def describe_impl(name: str, user_root: pathlib.Path | None = None) -> None:
+    """Print a short description for the requested benchmark.
+
+    Input: benchmark name and optional user benchmark directory override.
+    Output: prints description text if found; otherwise prints a helpful message.
+    """
+    if not name:
+        click.echo("Provide a benchmark name.")
+        return
+
+    user_root_path = pathlib.Path(user_root) if user_root is not None else USER_ROOT
+    root = res.files(EXECUTORS_PKG)
+    pkg_modules = [
+        p.stem for p in root.iterdir() if p.suffix == ".py" and p.stem != "__init__"
+    ]
+    user_py_files, user_directories = _iter_user_content(user_root_path)
+    all_benchmark_names = pkg_modules + user_py_files + user_directories
+
+    choice = name.strip()
+    matches = [n for n in all_benchmark_names if n.startswith(choice)]
+    if len(matches) == 1:
+        choice = matches[0]
+
+    description_path = None
+    if choice in pkg_modules:
+        description_path = (
+            res.files("benchwrap.benchmarks") / choice / "description.txt"
+        )
+    elif choice in user_directories:
+        description_path = user_root_path / choice / "description.txt"
+
+    if description_path is None or not description_path.exists():
+        click.echo(f"No description found for '{choice}'.")
+        return
+
+    with res.as_file(description_path) as desc_file:
+        text = desc_file.read_text(encoding="utf-8").strip()
+    click.echo(text or f"No description found for '{choice}'.")
+
+
 def run_impl(
     name,
     partition,
     nodes,
     opt_partition,
     opt_nodes,
+    exclusive,
     user_root: pathlib.Path | None = None,
     subprocess_module=None,
 ):
@@ -162,23 +136,12 @@ def run_impl(
         return
 
     if not name:
-        click.echo("== STANDARD MODULES ==")
-        for module in pkg_modules:
-            click.echo(f"  - {module}")
-        if user_py_files or user_directories:
-            click.echo("== USER MODULES ==")
-            for module in user_py_files:
-                click.echo(f"  - {module}  (py)")
-            for directory in user_directories:
-                click.echo(f"  - {directory}  (dir)")
-
-    choice = (
-        name.strip()
-        if name
-        else click.prompt("Enter name", default="", show_default=False).strip()
-    )
-    if not choice:
+        click.echo(
+            "Provide a benchmark name or run `benchwrap list` for a list of benchmarks."
+        )
         return
+
+    choice = name.strip()
 
     matches = [n for n in all_benchmark_names if n.startswith(choice)]
     if len(matches) == 1:
@@ -197,6 +160,8 @@ def run_impl(
             command.extend(["--partition", str(effective_partition)])
         if normalized_nodes is not None:
             command.extend(["--nodes", str(normalized_nodes)])
+        if exclusive:
+            command.append("--exclusive")
         return command
 
     if choice in pkg_modules:
@@ -205,12 +170,16 @@ def run_impl(
         proc.run(extend_slurm_args(command))
 
     elif choice in user_py_files:
+        if exclusive:
+            click.echo("[warn] --exclusive ignored for user .py benchmarks.")
         target = pathlib.Path(user_root_path) / f"{choice}.py"
         click.echo(f"▶ running user py {target}")
         command = [sys.executable, str(target)]
         proc.run(extend_slurm_args(command))
 
     elif choice in user_directories:
+        if exclusive:
+            click.echo("[warn] --exclusive ignored for user directory benchmarks.")
         script = pathlib.Path(user_root_path) / choice / "job_start.sh"
         click.echo(f"▶ running {script}")
         proc.run(["bash", str(script)])

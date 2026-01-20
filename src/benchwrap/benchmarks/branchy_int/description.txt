@@ -1,0 +1,1 @@
+Branch-heavy integer loop over random data. Stresses branch prediction and integer pipelines to expose low-IPC behavior and its energy cost. Env: BRANCHY_N (elements), BRANCHY_REPS.

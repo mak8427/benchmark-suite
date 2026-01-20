@@ -1,0 +1,1 @@
+Parallel I/O benchmark using IOR. Measures read/write throughput and I/O efficiency across nodes/filesystems, useful for storage energy/performance characterization.

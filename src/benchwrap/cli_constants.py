@@ -16,5 +16,11 @@ USER_ROOT = (
     pathlib.Path(os.getenv("XDG_DATA_HOME", pathlib.Path.home() / ".local/share"))
     / "benchwrap/benchmarks"
 )
-BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/jobs"
+JOBS_DEFAULT = DATA_DIR / "jobs"
+SLURM_DEFAULT = pathlib.Path("/opt/misc/profiling/u18101")
+BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/benchmarks"
+SERVER_URL = "http://141.5.110.112"  # used as reference don't change
 BASE_URL = "http://141.5.110.112:7800"
+MINIO_TUNNEL_URL = "http://141.5.110.112:7800"
+
+TUNNELLING_URL = False

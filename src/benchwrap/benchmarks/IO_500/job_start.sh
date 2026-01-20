@@ -3,7 +3,7 @@
 
 
 # Define paths
-DEST="$HOME/.local/share/benchwrap/jobs/job_${SLURM_JOB_ID}"
+DEST="$HOME/.local/share/benchwrap/jobs/IO_500/job_${SLURM_JOB_ID}"
 IO500_DIR="$HOME/.local/share/benchwrap/benchmarks/io500"
 IO500_SCRIPT="$IO500_DIR/io500.sh"
 CONFIG_FILE="$IO500_DIR/config-minimal.ini"

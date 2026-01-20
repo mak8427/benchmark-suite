@@ -1,0 +1,1 @@
+Memory bandwidth test (AXPY/triad-style). Streams large vectors through main memory to estimate sustained GB/s and energy cost of DRAM-heavy workloads.
