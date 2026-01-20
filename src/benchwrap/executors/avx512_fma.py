@@ -4,9 +4,7 @@ from .utils.benchmarks_func import run_slurm_job
 
 
 def main():
-    p = argparse.ArgumentParser(
-        description=f"Run {f} benchmark via SLURM."
-    )
+    p = argparse.ArgumentParser(description=f"Run {f} benchmark via SLURM.")
     p.add_argument(
         "--partition",
         default=None,
