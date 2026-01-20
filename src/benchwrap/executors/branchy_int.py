@@ -1,0 +1,34 @@
+import argparse
+
+from .utils.benchmarks_func import run_slurm_job
+
+
+def main():
+    p = argparse.ArgumentParser(
+        description=f"Run {f} benchmark via SLURM."
+    )
+    p.add_argument(
+        "--partition",
+        default=None,
+        help="SLURM partition to submit the job to (default: scc-cpu).",
+    )
+    p.add_argument(
+        "--nodes",
+        "--n",
+        "-n",
+        dest="nodes",
+        type=int,
+        default=1,
+        help="Number of nodes to request (default: 1).",
+    )
+    args = p.parse_args()
+
+    run_slurm_job(
+        bench_name="${f}",
+        partition=args.partition,
+        nodes=args.nodes,
+    )
+
+
+if __name__ == "__main__":
+    main()
