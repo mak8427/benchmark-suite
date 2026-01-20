@@ -1,6 +1,6 @@
 import argparse
 
-from .utils.benchmarks_func import (check_io500, check_ior, get_ior, get_io500,
+from .utils.benchmarks_func import (check_io500, check_ior, get_io500, get_ior,
                                     run_slurm_job)
 
 
@@ -12,9 +12,7 @@ def main():
         get_ior()
         assert check_ior() == True
 
-    p = argparse.ArgumentParser(
-        description="Run IO_500 benchmark via SLURM."
-    )
+    p = argparse.ArgumentParser(description="Run IO_500 benchmark via SLURM.")
     p.add_argument(
         "--partition",
         default=None,
