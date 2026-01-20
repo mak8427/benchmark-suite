@@ -1,17 +1,20 @@
 import argparse
+import sys
 
 from .utils.benchmarks_func import run_slurm_job
 
 
 def main():
+    # Parse CLI arguments
     p = argparse.ArgumentParser(
-        description=f"Run {f} benchmark via SLURM."
+        description="Run branchy_int benchmark via SLURM."
     )
     p.add_argument(
         "--partition",
         default=None,
         help="SLURM partition to submit the job to (default: scc-cpu).",
     )
+
     p.add_argument(
         "--nodes",
         "--n",
@@ -24,7 +27,7 @@ def main():
     args = p.parse_args()
 
     run_slurm_job(
-        bench_name="${f}",
+        bench_name="branchy_int",
         partition=args.partition,
         nodes=args.nodes,
     )

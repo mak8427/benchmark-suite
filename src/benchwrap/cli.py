@@ -15,8 +15,7 @@ import click
 
 from .cli_auth import (ensure_data_dir, get_access_token, login, register,
                        registered)
-from .cli_benchmarks import (add_impl_command, list_impl, old_list_impl,
-                             run_impl)
+from .cli_benchmarks import add_impl_command, list_impl, run_impl
 from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
                             EXECUTORS_PKG, TOK_FILE, USER_ROOT)
 from .cli_progress import (PRINT_LOCK, ProgressFile, inline_progress_line,
@@ -32,25 +31,6 @@ def benchwrap():
     Input: none (serves as the Click entry point).
     Output: returns a Click command group object.
     """
-
-
-@benchwrap.command("old_list")
-@click.argument(
-    "start",
-    required=False,
-    default="src/benchmarks",
-    type=click.Path(file_okay=False, dir_okay=True),
-)
-@click.option(
-    "--dir/--no-dir", "show_dir", default=False, help="Also list sub-directories."
-)
-def old_list(start: str, show_dir: bool) -> None:
-    """Legacy interactive browser for benchmark files.
-
-    Input: starting directory and flag to include sub-directories.
-    Output: delegates to ``old_list_impl`` and returns ``None``.
-    """
-    old_list_impl(start, show_dir, subprocess_module=subprocess)
 
 
 @benchwrap.command("list")
@@ -119,7 +99,6 @@ __all__ = [
     "subprocess",
     "res",
     "benchwrap",
-    "old_list",
     "_list",
     "run",
     "add",
