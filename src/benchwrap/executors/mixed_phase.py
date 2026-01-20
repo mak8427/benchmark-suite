@@ -6,9 +6,7 @@ from .utils.benchmarks_func import run_slurm_job
 
 def main():
     # Parse CLI arguments
-    p = argparse.ArgumentParser(
-        description="Run mixed_phase benchmark via SLURM."
-    )
+    p = argparse.ArgumentParser(description="Run mixed_phase benchmark via SLURM.")
     p.add_argument(
         "--partition",
         default=None,
