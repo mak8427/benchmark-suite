@@ -61,7 +61,7 @@ def list_impl(user_root: pathlib.Path | None = None) -> None:
         for module in user_py_files:
             click.echo(f"  - {module}  (py)")
         for directory in user_directories:
-        click.echo(f"  - {directory}  (dir)")
+            click.echo(f"  - {directory}  (dir)")
 
 
 def describe_impl(name: str, user_root: pathlib.Path | None = None) -> None:
