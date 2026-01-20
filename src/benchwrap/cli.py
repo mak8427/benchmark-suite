@@ -15,7 +15,8 @@ import click
 
 from .cli_auth import (ensure_data_dir, get_access_token, login, register,
                        registered)
-from .cli_benchmarks import add_impl_command, describe_impl, list_impl, run_impl
+from .cli_benchmarks import (add_impl_command, describe_impl, list_impl,
+                             run_impl)
 from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
                             EXECUTORS_PKG, TOK_FILE, USER_ROOT)
 from .cli_progress import (PRINT_LOCK, ProgressFile, inline_progress_line,
