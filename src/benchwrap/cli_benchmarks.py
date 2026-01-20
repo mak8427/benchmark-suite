@@ -89,7 +89,9 @@ def describe_impl(name: str, user_root: pathlib.Path | None = None) -> None:
 
     description_path = None
     if choice in pkg_modules:
-        description_path = res.files("benchwrap.benchmarks") / choice / "description.txt"
+        description_path = (
+            res.files("benchwrap.benchmarks") / choice / "description.txt"
+        )
     elif choice in user_directories:
         description_path = user_root_path / choice / "description.txt"
 
