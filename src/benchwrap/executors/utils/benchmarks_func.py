@@ -5,8 +5,6 @@ import stat
 import subprocess
 import time
 
-import h5py
-import pandas as pd
 
 
 def run_slurm_job(
@@ -73,6 +71,9 @@ def h5tree(filename, file, prefix=""):
         - If a group, it prints its keys and recurses into children.
         - If a dataset, it reads and prints it using pandas.
     """
+    import h5py
+    import pandas as pd
+
     print(prefix + file.name)
     if isinstance(file, h5py._hl.group.Group):
         print(file.keys())
@@ -94,6 +95,8 @@ def read_h5(filename):
         - Opens the file using h5py.
         - Delegates the recursive inspection to `h5tree()`.
     """
+    import h5py
+
     with h5py.File(filename, "r") as f:
         h5tree(filename, f)
 
