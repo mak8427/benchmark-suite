@@ -6,7 +6,6 @@ import subprocess
 import time
 
 
-
 def run_slurm_job(
     bench_name: str, partition: str, nodes: int = 1, exclusive: bool = False
 ):
