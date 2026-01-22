@@ -165,7 +165,8 @@ def run_impl(
         return command
 
     if choice in pkg_modules:
-        click.echo(f"▶ running {EXECUTORS_PKG}.{choice}")
+        suffix = " (exclusive)" if exclusive else ""
+        click.echo(f"▶ running {EXECUTORS_PKG}.{choice}{suffix}")
         command = [sys.executable, "-m", f"{EXECUTORS_PKG}.{choice}"]
         proc.run(extend_slurm_args(command))
 

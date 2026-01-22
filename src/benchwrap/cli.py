@@ -66,6 +66,7 @@ def describe(name: str) -> None:
     "-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes"
 )
 @click.option(
+    "-e",
     "--exclusive/--no-exclusive",
     "exclusive",
     default=False,
