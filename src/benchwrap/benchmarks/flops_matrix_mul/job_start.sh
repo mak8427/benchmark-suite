@@ -6,6 +6,7 @@
 set -euo pipefail
 module load likwid
 source activate energy
+DEST="$HOME/.local/share/benchwrap/jobs/flops_matrix_mul/job_${SLURM_JOB_ID}"
 
 srun --cpu-bind=cores \
   likwid-perfctr -g FLOPS_DP -t 1s \
@@ -13,3 +14,4 @@ srun --cpu-bind=cores \
 
 
 echo "Results -> $DEST"
+echo "LIKWID output saved to timeline_${SLURM_JOB_ID}.csv"

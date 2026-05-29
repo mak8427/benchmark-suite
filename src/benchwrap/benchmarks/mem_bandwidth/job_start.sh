@@ -3,14 +3,12 @@
 #SBATCH --acctg-freq=1
 #SBATCH --acctg-freq=energy=1
 
-
+set -euo pipefail
 module load likwid
 source activate energy
 
-srun likwid-perfctr -C 0-24-g FLOPS_DP -t 1s -O \
-    -o timeline_${SLURM_JOB_ID}.csv \
-    python3 -u benchmarks/.mem_bandwidth/workload.py
+srun --cpu-bind=cores \
+  likwid-perfctr -g FLOPS_DP -t 1s \
+  python3 -u -m benchwrap.benchmarks.mem_bandwidth.workload 1>&2
 
-#python3 -u benchmarks/mem_bandwidth/launcher.py
-
-echo "LIKWID output saved to flops_${SLURM_JOB_ID}.csv"
+echo "LIKWID output saved to timeline_${SLURM_JOB_ID}.csv"
