@@ -19,8 +19,8 @@ USER_ROOT = (
 JOBS_DEFAULT = DATA_DIR / "jobs"
 SLURM_DEFAULT = pathlib.Path("/opt/misc/profiling/u18101")
 BENCH_ROOT = pathlib.Path(__file__).parent.parent / "src/benchmarks"
-SERVER_URL = "http://141.5.110.112"  # used as reference don't change
-BASE_URL = "http://141.5.110.112:7800"
-MINIO_TUNNEL_URL = "http://141.5.110.112:7800"
+SERVER_URL = os.getenv("BENCHWRAP_SERVER_URL", "https://141.5.110.112")
+BASE_URL = os.getenv("BENCHWRAP_API_URL", f"{SERVER_URL.rstrip('/')}/api")
+MINIO_TUNNEL_URL = os.getenv("BENCHWRAP_STORAGE_TUNNEL_URL", BASE_URL)
 
 TUNNELLING_URL = False
