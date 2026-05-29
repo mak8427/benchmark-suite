@@ -76,9 +76,7 @@ def upload_one(
     }
 
     if TUNNELLING_URL:
-        upload_url = presign_body["url"].replace(
-            f"{SERVER_URL}:9000", MINIO_TUNNEL_URL
-        )
+        upload_url = presign_body["url"].replace(f"{SERVER_URL}:9000", MINIO_TUNNEL_URL)
     content_type = mimetypes.guess_type(object_name)[0] or "application/octet-stream"
     file_size = os.path.getsize(filepath)
 
@@ -86,7 +84,11 @@ def upload_one(
         put_response = requests.put(
             upload_url,
             data=b"",
-            headers={**upload_headers, "Content-Type": content_type, "Content-Length": "0"},
+            headers={
+                **upload_headers,
+                "Content-Type": content_type,
+                "Content-Length": "0",
+            },
             timeout=(10, 30),
         )
         table_update(
@@ -105,7 +107,11 @@ def upload_one(
         put_response = requests.put(
             upload_url,
             data=progress_file,
-            headers={**upload_headers, "Content-Type": content_type, "Content-Length": str(file_size)},
+            headers={
+                **upload_headers,
+                "Content-Type": content_type,
+                "Content-Length": str(file_size),
+            },
             timeout=(10, None),
         )
     finally:
