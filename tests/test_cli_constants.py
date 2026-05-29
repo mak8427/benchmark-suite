@@ -13,7 +13,7 @@ def test_default_api_url_uses_ingress_prefix(monkeypatch) -> None:
     import benchwrap.cli_constants as constants
 
     importlib.reload(constants)
-    assert constants.BASE_URL == "https://141.5.110.112/api"
+    assert constants.BASE_URL == "http://141.5.110.112/api"
 
 
 def test_api_url_can_be_overridden(monkeypatch) -> None:
