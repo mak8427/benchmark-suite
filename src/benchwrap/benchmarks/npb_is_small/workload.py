@@ -34,7 +34,9 @@ def main() -> None:
             sorted_values = np.sort(values)
             if not np.all(sorted_values[1:] >= sorted_values[:-1]):
                 raise RuntimeError("sort validation failed")
-            checksum ^= int(ranks[sorted_values[probes]].sum() + sorted_values[probes].sum())
+            checksum ^= int(
+                ranks[sorted_values[probes]].sum() + sorted_values[probes].sum()
+            )
         rounds += 1
 
     elapsed = time.time() - start

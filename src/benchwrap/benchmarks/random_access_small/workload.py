@@ -30,7 +30,9 @@ def main() -> None:
         while done < updates:
             count = min(chunk, updates - done)
             indices = rng.integers(0, size, size=count, dtype=np.int64)
-            values = rng.integers(0, np.iinfo(np.uint64).max, size=count, dtype=np.uint64)
+            values = rng.integers(
+                0, np.iinfo(np.uint64).max, size=count, dtype=np.uint64
+            )
             np.bitwise_xor.at(table, indices, values)
             checksum ^= np.bitwise_xor.reduce(table[indices[: min(1024, count)]])
             done += count
