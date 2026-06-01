@@ -30,7 +30,9 @@ def _benchmark_from_jobs_path(path: str) -> str | None:
     except ValueError:
         return None
     first = relative.split(os.sep, 1)[0]
-    return first if first and first != os.curdir and not first.startswith("..") else None
+    return (
+        first if first and first != os.curdir and not first.startswith("..") else None
+    )
 
 
 def _job_id_benchmark_map() -> dict[str, str]:
@@ -71,7 +73,9 @@ def list_files_upload() -> list[tuple[str, str, str | None]]:
                 continue
             filepath = os.path.join(root, filename)
             archive_name = os.path.relpath(filepath, JOBS_DEFAULT)
-            files.append((filepath, archive_name, _benchmark_for_file(filepath, job_benchmarks)))
+            files.append(
+                (filepath, archive_name, _benchmark_for_file(filepath, job_benchmarks))
+            )
 
     for root, _, filenames in os.walk(SLURM_DEFAULT):
         for filename in filenames:
@@ -79,14 +83,20 @@ def list_files_upload() -> list[tuple[str, str, str | None]]:
                 continue
             filepath = os.path.join(root, filename)
             archive_name = os.path.relpath(filepath, SLURM_DEFAULT)
-            files.append((filepath, archive_name, _benchmark_for_file(filepath, job_benchmarks)))
+            files.append(
+                (filepath, archive_name, _benchmark_for_file(filepath, job_benchmarks))
+            )
 
     click.echo(f"Found {len(files)} files to upload.")
     return files
 
 
 def upload_one(
-    index: int, access_token: str, filepath: str, object_name: str, benchmark_name: str | None = None
+    index: int,
+    access_token: str,
+    filepath: str,
+    object_name: str,
+    benchmark_name: str | None = None,
 ) -> tuple[str, bool]:
     """Upload one file while updating the row ``index`` in the progress table.
 
