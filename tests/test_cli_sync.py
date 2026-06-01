@@ -99,8 +99,14 @@ def test_sync_accepts_metadata_file_tuples(monkeypatch, tmp_path) -> None:
     source.write_bytes(b"abc")
     monkeypatch.setattr(cli_sync, "registered", lambda: True)
     monkeypatch.setattr(cli_sync, "get_access_token", lambda: "token")
-    monkeypatch.setattr(cli_sync, "list_files_upload", lambda: [(str(source), "result.h5", "stream_triad")])
-    monkeypatch.setattr(cli_sync, "upload_many", lambda *_args, **_kwargs: [("result.h5", True)])
+    monkeypatch.setattr(
+        cli_sync,
+        "list_files_upload",
+        lambda: [(str(source), "result.h5", "stream_triad")],
+    )
+    monkeypatch.setattr(
+        cli_sync, "upload_many", lambda *_args, **_kwargs: [("result.h5", True)]
+    )
     monkeypatch.setattr(cli_sync, "table_start", lambda *_args, **_kwargs: None)
 
     result = CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
