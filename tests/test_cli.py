@@ -9,12 +9,14 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from src.benchwrap.core import add_impl
-
 ROOT = pathlib.Path(__file__).parent.parent.resolve()
 SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
+
+from src.benchwrap.core import add_impl
 
 
 @pytest.fixture
@@ -165,3 +167,20 @@ def test_run_builtin(monkeypatch):
     r = CliRunner().invoke(cli.run, ["std"])
     assert r.exit_code == 0
     assert any("-m" in c for c in calls)
+
+
+def test_logout_clears_token_file(tmp_path, monkeypatch):
+    import benchwrap.cli as cli
+    import benchwrap.cli_auth as auth
+
+    importlib.reload(auth)
+    importlib.reload(cli)
+    token_file = tmp_path / "tokens"
+    monkeypatch.setattr(auth, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(auth, "TOK_FILE", token_file)
+    token_file.write_text('{"refresh": "abc", "username": "alice"}')
+
+    result = CliRunner().invoke(auth.logout)
+
+    assert result.exit_code == 0
+    assert token_file.read_text() == ""

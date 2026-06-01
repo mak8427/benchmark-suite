@@ -75,13 +75,17 @@ benchwrap sync
   -> PUT file bytes to returned GWDG S3 URL
 ```
 
+Normal sync is incremental. The CLI stores an account-scoped local sync state in `~/.local/share/benchwrap/sync-state.json`; each entry records file size, `mtime_ns`, benchmark name, and a BLAKE2b content hash. Unchanged files for the active account are skipped. `benchwrap sync --force` bypasses that state and reuploads every discovered file.
+
+`benchwrap logout` clears the local refresh token. The sync state is still account-scoped, so logging into another account does not make the new account reuse the previous user's uploaded-file cache.
+
 Files from `~/.local/share/benchwrap/jobs/<benchmark>/...` carry `<benchmark>` directly.
 
 Slurm HDF5 files named like `14001040_batch_agq007.h5` or `14001040_0_agq007.h5` are mapped back to a benchmark by looking for `~/.local/share/benchwrap/jobs/<benchmark>/job_14001040`. If no matching job folder exists, the backend will store the benchmark as unknown.
 
 This mapping is important because the HDF5 filename only contains Slurm job id, step id, and compute node. It does not contain the benchmark name.
 
-Sync currently uploads every file under the jobs and Slurm profile roots, except files named `tokens`. The backend analysis pipeline only processes `.h5` files, so unrelated files can still consume S3 quota.
+Sync currently discovers every file under the jobs and Slurm profile roots, except files named `tokens`. The backend analysis pipeline only processes `.h5` files, so unrelated files can still consume S3 quota when they are new or when `--force` is used.
 
 ## Slurm HDF5 Files
 
@@ -181,5 +185,5 @@ If Grafana shows `unknown` benchmark names for new uploads, check:
 - Make `SLURM_DEFAULT` configurable per cluster/user.
 - Avoid uploading unrelated historical profiling files during normal sync; add a recent-job or explicit-job selection mode.
 - Add a CLI manifest per run so benchmark name, command, partition, nodes, Slurm job id, and timestamps are explicit rather than inferred.
-- Improve incremental sync so already uploaded files are skipped unless requested.
+- Add a remote reconciliation mode if local sync state is deleted or a user needs to repair S3 contents from scratch.
 - Keep backend and CLI metadata contracts tested together when changing upload behavior.

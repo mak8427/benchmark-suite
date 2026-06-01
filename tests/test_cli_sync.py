@@ -97,6 +97,8 @@ def test_sync_accepts_metadata_file_tuples(monkeypatch, tmp_path) -> None:
     """Sync should handle the 3-tuple produced by metadata-aware discovery."""
     source = tmp_path / "result.h5"
     source.write_bytes(b"abc")
+    monkeypatch.setattr(cli_sync, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(cli_sync, "SYNC_STATE_FILE", tmp_path / "sync-state.json")
     monkeypatch.setattr(cli_sync, "registered", lambda: True)
     monkeypatch.setattr(cli_sync, "get_access_token", lambda: "token")
     monkeypatch.setattr(cli_sync, "list_files_upload", lambda: [(str(source), "result.h5", "stream_triad")])
@@ -107,3 +109,45 @@ def test_sync_accepts_metadata_file_tuples(monkeypatch, tmp_path) -> None:
 
     assert result.exit_code == 0
     assert "1/1 uploaded successfully" in result.output
+
+
+def test_sync_skips_unchanged_files(monkeypatch, tmp_path) -> None:
+    """A second normal sync should skip files already recorded for the account."""
+    source = tmp_path / "result.h5"
+    source.write_bytes(b"abc")
+    monkeypatch.setattr(cli_sync, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(cli_sync, "SYNC_STATE_FILE", tmp_path / "sync-state.json")
+    monkeypatch.setattr(cli_sync, "registered", lambda: True)
+    monkeypatch.setattr(cli_sync, "get_access_token", lambda: "token")
+    monkeypatch.setattr(cli_sync, "list_files_upload", lambda: [(str(source), "result.h5", "stream_triad")])
+    monkeypatch.setattr(cli_sync, "table_start", lambda *_args, **_kwargs: None)
+    calls = []
+    monkeypatch.setattr(cli_sync, "upload_many", lambda *_args, **_kwargs: calls.append(True) or [("result.h5", True)])
+
+    first = CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
+    second = CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
+
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+    assert len(calls) == 1
+    assert "No changed files" in second.output
+
+
+def test_sync_force_uploads_unchanged_files(monkeypatch, tmp_path) -> None:
+    """--force should preserve the previous reupload-everything behavior."""
+    source = tmp_path / "result.h5"
+    source.write_bytes(b"abc")
+    monkeypatch.setattr(cli_sync, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(cli_sync, "SYNC_STATE_FILE", tmp_path / "sync-state.json")
+    monkeypatch.setattr(cli_sync, "registered", lambda: True)
+    monkeypatch.setattr(cli_sync, "get_access_token", lambda: "token")
+    monkeypatch.setattr(cli_sync, "list_files_upload", lambda: [(str(source), "result.h5", "stream_triad")])
+    monkeypatch.setattr(cli_sync, "table_start", lambda *_args, **_kwargs: None)
+    calls = []
+    monkeypatch.setattr(cli_sync, "upload_many", lambda *_args, **_kwargs: calls.append(True) or [("result.h5", True)])
+
+    CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
+    forced = CliRunner().invoke(cli_sync.sync, ["--jobs", "1", "--force"], input="y\n")
+
+    assert forced.exit_code == 0
+    assert len(calls) == 2

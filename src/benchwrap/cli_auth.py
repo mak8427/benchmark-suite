@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import json
+
 import click
 import requests
 
@@ -17,6 +20,47 @@ def ensure_data_dir() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if not TOK_FILE.exists():
         TOK_FILE.touch(mode=0o600)
+
+
+def _decode_access_payload(access_token: str) -> dict[str, str]:
+    """Decode JWT payload without verifying it, for local display/state only."""
+    try:
+        payload = access_token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        data = base64.urlsafe_b64decode(payload.encode("ascii"))
+        decoded = json.loads(data.decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return {}
+    return decoded if isinstance(decoded, dict) else {}
+
+
+def _read_token_state() -> dict[str, str]:
+    """Read token state, accepting the legacy plain-refresh-token format."""
+    if not TOK_FILE.exists():
+        return {}
+    raw = TOK_FILE.read_text().strip()
+    if not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return {"refresh": raw}
+    return data if isinstance(data, dict) else {}
+
+
+def _write_token_state(*, refresh: str, username: str | None = None) -> None:
+    """Persist the active account credentials."""
+    ensure_data_dir()
+    state = {"refresh": refresh}
+    if username:
+        state["username"] = username
+    TOK_FILE.write_text(json.dumps(state, sort_keys=True))
+
+
+def active_username() -> str | None:
+    """Return the locally stored active username when known."""
+    value = _read_token_state().get("username")
+    return str(value) if value else None
 
 
 def register() -> str | bool:
@@ -43,7 +87,7 @@ def register() -> str | bool:
         return False
 
     data = response.json()
-    TOK_FILE.write_text(data["refresh"])
+    _write_token_state(refresh=data["refresh"], username=username)
     click.echo("✔ Registration successful.")
     return data["access"]
 
@@ -54,7 +98,7 @@ def registered() -> bool:
     Input: none.
     Output: ``True`` when ``TOK_FILE`` exists and is non-empty, otherwise ``False``.
     """
-    return TOK_FILE.exists() and TOK_FILE.read_text().strip() != ""
+    return bool(_read_token_state().get("refresh"))
 
 
 def get_access_token() -> str | bool:
@@ -67,7 +111,8 @@ def get_access_token() -> str | bool:
         click.echo("No registration found. Please register first.")
         return False
 
-    refresh_id = TOK_FILE.read_text().strip()
+    token_state = _read_token_state()
+    refresh_id = token_state.get("refresh", "")
     response = requests.post(
         f"{BASE_URL}/auth/refresh",
         params={"rid": refresh_id},
@@ -78,7 +123,9 @@ def get_access_token() -> str | bool:
         return False
 
     data = response.json()
-    TOK_FILE.write_text(data["refresh"])
+    payload = _decode_access_payload(data.get("access", ""))
+    username = token_state.get("username") or payload.get("username")
+    _write_token_state(refresh=data["refresh"], username=username)
     return data["access"]
 
 
@@ -102,6 +149,15 @@ def login() -> str | bool:
         return False
 
     data = response.json()
-    TOK_FILE.write_text(data["refresh"])
+    _write_token_state(refresh=data["refresh"], username=username)
     click.echo("✔ Login successful.")
     return data["access"]
+
+
+@click.command()
+def logout() -> None:
+    """Clear the active account credentials without deleting sync history."""
+    ensure_data_dir()
+    if TOK_FILE.exists():
+        TOK_FILE.write_text("")
+    click.echo("✔ Logged out.")
