@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import mimetypes
 import os
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Iterable
@@ -18,13 +19,50 @@ from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
                            table_start, table_update)
 
 
-def list_files_upload() -> list[tuple[str, str]]:
+def _slurm_job_id(filename: str) -> str | None:
+    match = re.match(r"^(\d+)_(?:batch|\d+)_", filename)
+    return match.group(1) if match else None
+
+
+def _benchmark_from_jobs_path(path: str) -> str | None:
+    try:
+        relative = os.path.relpath(path, JOBS_DEFAULT)
+    except ValueError:
+        return None
+    first = relative.split(os.sep, 1)[0]
+    return first if first and first != os.curdir and not first.startswith("..") else None
+
+
+def _job_id_benchmark_map() -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    if not os.path.isdir(JOBS_DEFAULT):
+        return mapping
+    for benchmark_name in os.listdir(JOBS_DEFAULT):
+        benchmark_dir = os.path.join(JOBS_DEFAULT, benchmark_name)
+        if not os.path.isdir(benchmark_dir):
+            continue
+        for entry in os.listdir(benchmark_dir):
+            if entry.startswith("job_"):
+                mapping[entry.removeprefix("job_")] = benchmark_name
+    return mapping
+
+
+def _benchmark_for_file(filepath: str, job_benchmarks: dict[str, str]) -> str | None:
+    benchmark = _benchmark_from_jobs_path(filepath)
+    if benchmark:
+        return benchmark
+    job_id = _slurm_job_id(os.path.basename(filepath))
+    return job_benchmarks.get(job_id) if job_id else None
+
+
+def list_files_upload() -> list[tuple[str, str, str | None]]:
     """Walk ``JOBS_DEFAULT`` and collect every file that should be uploaded.
 
     Input: none (always scans the configured user root).
-    Output: list of ``(absolute_path, relative_archive_name)`` tuples.
+    Output: list of ``(absolute_path, relative_archive_name, benchmark_name)`` tuples.
     """
-    files: list[tuple[str, str]] = []
+    files: list[tuple[str, str, str | None]] = []
+    job_benchmarks = _job_id_benchmark_map()
 
     #
     for root, _, filenames in os.walk(JOBS_DEFAULT):
@@ -33,7 +71,7 @@ def list_files_upload() -> list[tuple[str, str]]:
                 continue
             filepath = os.path.join(root, filename)
             archive_name = os.path.relpath(filepath, JOBS_DEFAULT)
-            files.append((filepath, archive_name))
+            files.append((filepath, archive_name, _benchmark_for_file(filepath, job_benchmarks)))
 
     for root, _, filenames in os.walk(SLURM_DEFAULT):
         for filename in filenames:
@@ -41,14 +79,14 @@ def list_files_upload() -> list[tuple[str, str]]:
                 continue
             filepath = os.path.join(root, filename)
             archive_name = os.path.relpath(filepath, SLURM_DEFAULT)
-            files.append((filepath, archive_name))
+            files.append((filepath, archive_name, _benchmark_for_file(filepath, job_benchmarks)))
 
     click.echo(f"Found {len(files)} files to upload.")
     return files
 
 
 def upload_one(
-    index: int, access_token: str, filepath: str, object_name: str
+    index: int, access_token: str, filepath: str, object_name: str, benchmark_name: str | None = None
 ) -> tuple[str, bool]:
     """Upload one file while updating the row ``index`` in the progress table.
 
@@ -60,7 +98,10 @@ def upload_one(
 
     response = session.post(
         f"{BASE_URL}/storage/presign/upload",
-        params={"object_name": object_name},
+        params={
+            "object_name": object_name,
+            **({"benchmark_name": benchmark_name} if benchmark_name else {}),
+        },
         timeout=(10, 30),
     )
     if response.status_code != 200:
@@ -128,7 +169,7 @@ def upload_one(
 
 def upload_many(
     access_token: str,
-    indexed_files: Iterable[tuple[int, tuple[str, str]]],
+    indexed_files: Iterable[tuple[int, tuple[str, str, str | None]]],
     workers: int = 4,
 ) -> list[tuple[str, bool]]:
     """Upload multiple files concurrently using a worker pool.
@@ -144,9 +185,11 @@ def upload_many(
                 idx,
                 access_token,
                 filepath,
-                relative_name.replace(os.sep, "/").lstrip("/")[:256],
+                object_name,
+                benchmark_name,
             )
-            for idx, (filepath, relative_name) in indexed_files
+            for idx, (filepath, relative_name, benchmark_name) in indexed_files
+            for object_name in [relative_name.replace(os.sep, "/").lstrip("/")[:256]]
         ]
         for future in as_completed(futures):
             results.append(future.result())

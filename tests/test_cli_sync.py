@@ -17,6 +17,7 @@ def test_upload_one_sends_presigned_headers(monkeypatch, tmp_path) -> None:
         headers = {}
 
         def post(self, url, params, timeout):
+            seen["params"] = params
             return SimpleNamespace(
                 status_code=200,
                 json=lambda: {
@@ -34,10 +35,48 @@ def test_upload_one_sends_presigned_headers(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(cli_sync.requests, "put", fake_put)
     monkeypatch.setattr(cli_sync, "table_update", lambda *args, **kwargs: None)
 
-    name, ok = cli_sync.upload_one(0, "token", str(source), "result.h5")
+    name, ok = cli_sync.upload_one(0, "token", str(source), "result.h5", "stream_triad")
 
     assert ok is True
     assert name == "result.h5"
+    assert seen["params"]["benchmark_name"] == "stream_triad"
     assert seen["url"] == "https://s3.example/upload"
     assert seen["headers"]["x-amz-acl"] == "private"
     assert seen["headers"]["Content-Length"] == "3"
+
+
+def test_upload_one_sends_benchmark_name(monkeypatch, tmp_path) -> None:
+    """Sync should pass benchmark metadata to the backend presign endpoint."""
+    source = tmp_path / "result.h5"
+    source.write_bytes(b"abc")
+    seen = {}
+
+    class Session:
+        headers = {}
+
+        def post(self, url, params, timeout):
+            seen["params"] = params
+            return SimpleNamespace(status_code=200, json=lambda: {"url": "https://s3.example/upload", "headers": {}})
+
+    monkeypatch.setattr(cli_sync.requests, "Session", Session)
+    monkeypatch.setattr(cli_sync.requests, "put", lambda *args, **kwargs: SimpleNamespace(ok=True, status_code=200))
+    monkeypatch.setattr(cli_sync, "table_update", lambda *args, **kwargs: None)
+
+    _name, ok = cli_sync.upload_one(0, "token", str(source), "result.h5", "flops_matrix_mul_mini")
+
+    assert ok is True
+    assert seen["params"]["benchmark_name"] == "flops_matrix_mul_mini"
+
+
+def test_benchmark_for_slurm_file_uses_job_directory(monkeypatch, tmp_path) -> None:
+    """Slurm profile files should map back to their Benchwrap benchmark folder."""
+    jobs = tmp_path / "jobs"
+    (jobs / "stream_triad" / "job_12345").mkdir(parents=True)
+    slurm_file = tmp_path / "profiles" / "12345_batch_node001.h5"
+    slurm_file.parent.mkdir()
+    slurm_file.write_text("x", encoding="utf-8")
+    monkeypatch.setattr(cli_sync, "JOBS_DEFAULT", jobs)
+
+    mapping = cli_sync._job_id_benchmark_map()
+
+    assert cli_sync._benchmark_for_file(str(slurm_file), mapping) == "stream_triad"
