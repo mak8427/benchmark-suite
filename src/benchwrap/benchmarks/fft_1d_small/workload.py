@@ -33,7 +33,9 @@ def main() -> None:
         rounds += 1
 
     elapsed = time.time() - start
-    residual = abs(float(np.linalg.norm(signal)) - original_norm) / max(original_norm, 1e-12)
+    residual = abs(float(np.linalg.norm(signal)) - original_norm) / max(
+        original_norm, 1e-12
+    )
     if residual > 1e-6:
         raise RuntimeError(f"fft residual too high: {residual}")
     flops_est = 10.0 * size * np.log2(size) * iters * rounds * 2.0
