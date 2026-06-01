@@ -1,0 +1,1 @@
+CoreMark-inspired compact CPU benchmark. Mixes integer list processing, a small matrix kernel, a deterministic state-machine pass, and CRC-style checks into a short self-validating run. Env: COREMARK_MINI_SECONDS, COREMARK_MINI_ITERS, COREMARK_MINI_SIZE.

@@ -221,6 +221,11 @@ def test_cli_slurm_commands_exist():
         "flops_matrix_mul",
         "cache_test",
         "flops_matrix_mul_mini",
+        "coremark_mini",
+        "npb_ep_small",
+        "npb_is_small",
+        "fft_1d_small",
+        "random_access_small",
     ]
     for benchmark in expected_benchmarks:
         assert (

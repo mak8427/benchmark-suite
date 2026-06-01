@@ -119,6 +119,8 @@ When adding a benchmark:
 
 IO500 is currently excluded from active benchmark correctness work. Do not treat it as passing unless it is explicitly reintroduced.
 
+The quick compute campaign benchmarks are intentionally small enough for pilot runs and repeated cluster sampling: `coremark_mini`, `npb_ep_small`, `npb_is_small`, `fft_1d_small`, and `random_access_small`. They are inspired by established CPU/HPC kernels but implemented as lightweight NumPy/Python workloads so they can run through the normal `benchwrap run <name> -p medium -n 1` path and finish well under a five-minute target on typical compute nodes. Tune their environment variables only after a pilot run proves the default is too short or too long.
+
 ## Development
 
 Install locally:

@@ -1,0 +1,1 @@
+NAS IS-inspired small integer sort benchmark. Performs repeated deterministic key ranking with histogram validation to stress integer sorting and memory movement. Env: NPB_IS_SECONDS, NPB_IS_KEYS, NPB_IS_ITERS, NPB_IS_MAX_KEY.

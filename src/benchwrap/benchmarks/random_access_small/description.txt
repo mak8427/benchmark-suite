@@ -1,0 +1,1 @@
+Small random-access memory update benchmark inspired by HPCC RandomAccess. Performs deterministic irregular XOR updates to stress cache misses and memory latency rather than streaming bandwidth. Env: RANDOM_ACCESS_SECONDS, RANDOM_ACCESS_SIZE, RANDOM_ACCESS_UPDATES, RANDOM_ACCESS_CHUNK.

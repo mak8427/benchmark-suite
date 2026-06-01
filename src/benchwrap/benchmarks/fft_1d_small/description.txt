@@ -1,0 +1,1 @@
+Small one-dimensional FFT benchmark inspired by spectral/HPC Challenge style workloads. Repeats deterministic complex FFT and inverse FFT passes with residual validation. Env: FFT_SECONDS, FFT_SIZE, FFT_ITERS.

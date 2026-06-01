@@ -1,0 +1,1 @@
+NAS EP-inspired small benchmark. Generates deterministic normal variates and bins radius values to emulate the embarrassingly parallel random-number kernel at a short runtime. Env: NPB_EP_SECONDS, NPB_EP_PAIRS, NPB_EP_CHUNKS.

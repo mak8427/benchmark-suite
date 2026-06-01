@@ -59,6 +59,11 @@ def test_known_fixed_benchmarks_invoke_their_package_modules() -> None:
         "flops_matrix_mul": "benchwrap.benchmarks.flops_matrix_mul.workload",
         "flops_matrix_mul_mini": "benchwrap.benchmarks.flops_matrix_mul_mini.workload",
         "flops_matrix_mul_no_likwid": "benchwrap.benchmarks.flops_matrix_mul_no_likwid.workload",
+        "coremark_mini": "benchwrap.benchmarks.coremark_mini.workload",
+        "npb_ep_small": "benchwrap.benchmarks.npb_ep_small.workload",
+        "npb_is_small": "benchwrap.benchmarks.npb_is_small.workload",
+        "fft_1d_small": "benchwrap.benchmarks.fft_1d_small.workload",
+        "random_access_small": "benchwrap.benchmarks.random_access_small.workload",
     }
     for name, module in expected_modules.items():
         assert f"python3 -u -m {module}" in _job_script(name)
