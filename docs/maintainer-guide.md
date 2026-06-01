@@ -81,6 +81,8 @@ Slurm HDF5 files named like `14001040_batch_agq007.h5` or `14001040_0_agq007.h5`
 
 This mapping is important because the HDF5 filename only contains Slurm job id, step id, and compute node. It does not contain the benchmark name.
 
+Sync currently uploads every file under the jobs and Slurm profile roots, except files named `tokens`. The backend analysis pipeline only processes `.h5` files, so unrelated files can still consume S3 quota.
+
 ## Slurm HDF5 Files
 
 Slurm often emits two profile files per job and node:

@@ -244,7 +244,7 @@ def sync(jobs: int):
         click.echo("No files to sync.")
         return True
 
-    total_size = sum(os.path.getsize(filepath) for filepath, _ in files)
+    total_size = sum(os.path.getsize(filepath) for filepath, _, _ in files)
     click.echo(
         f":: Synchronizing {len(files)} files ({_human_readable_size(total_size)}) "
         f"with {jobs} jobs"

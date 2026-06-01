@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+from click.testing import CliRunner
+
 from benchwrap import cli_sync
 
 
@@ -89,3 +91,19 @@ def test_benchmark_for_slurm_file_uses_job_directory(monkeypatch, tmp_path) -> N
     mapping = cli_sync._job_id_benchmark_map()
 
     assert cli_sync._benchmark_for_file(str(slurm_file), mapping) == "stream_triad"
+
+
+def test_sync_accepts_metadata_file_tuples(monkeypatch, tmp_path) -> None:
+    """Sync should handle the 3-tuple produced by metadata-aware discovery."""
+    source = tmp_path / "result.h5"
+    source.write_bytes(b"abc")
+    monkeypatch.setattr(cli_sync, "registered", lambda: True)
+    monkeypatch.setattr(cli_sync, "get_access_token", lambda: "token")
+    monkeypatch.setattr(cli_sync, "list_files_upload", lambda: [(str(source), "result.h5", "stream_triad")])
+    monkeypatch.setattr(cli_sync, "upload_many", lambda *_args, **_kwargs: [("result.h5", True)])
+    monkeypatch.setattr(cli_sync, "table_start", lambda *_args, **_kwargs: None)
+
+    result = CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
+
+    assert result.exit_code == 0
+    assert "1/1 uploaded successfully" in result.output
