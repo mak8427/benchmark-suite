@@ -56,13 +56,22 @@ def test_upload_one_sends_benchmark_name(monkeypatch, tmp_path) -> None:
 
         def post(self, url, params, timeout):
             seen["params"] = params
-            return SimpleNamespace(status_code=200, json=lambda: {"url": "https://s3.example/upload", "headers": {}})
+            return SimpleNamespace(
+                status_code=200,
+                json=lambda: {"url": "https://s3.example/upload", "headers": {}},
+            )
 
     monkeypatch.setattr(cli_sync.requests, "Session", Session)
-    monkeypatch.setattr(cli_sync.requests, "put", lambda *args, **kwargs: SimpleNamespace(ok=True, status_code=200))
+    monkeypatch.setattr(
+        cli_sync.requests,
+        "put",
+        lambda *args, **kwargs: SimpleNamespace(ok=True, status_code=200),
+    )
     monkeypatch.setattr(cli_sync, "table_update", lambda *args, **kwargs: None)
 
-    _name, ok = cli_sync.upload_one(0, "token", str(source), "result.h5", "flops_matrix_mul_mini")
+    _name, ok = cli_sync.upload_one(
+        0, "token", str(source), "result.h5", "flops_matrix_mul_mini"
+    )
 
     assert ok is True
     assert seen["params"]["benchmark_name"] == "flops_matrix_mul_mini"
