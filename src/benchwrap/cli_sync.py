@@ -15,8 +15,8 @@ import click
 import requests
 
 from .cli_auth import get_access_token, login, register, registered
-from .cli_constants import (BASE_URL, JOBS_DEFAULT, MINIO_TUNNEL_URL,
-                            SERVER_URL, SLURM_DEFAULT, TUNNELLING_URL, DATA_DIR)
+from .cli_constants import (BASE_URL, DATA_DIR, JOBS_DEFAULT, MINIO_TUNNEL_URL,
+                            SERVER_URL, SLURM_DEFAULT, TUNNELLING_URL)
 from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
                            table_start, table_update)
 
@@ -110,7 +110,9 @@ def filter_changed_files(
 ) -> tuple[list[tuple[str, str, str | None]], dict, dict[str, dict[str, object]]]:
     """Return files that need uploading and their computed signatures."""
     state = _load_sync_state()
-    account = state.setdefault("accounts", {}).setdefault(_account_key(username), {"files": {}})
+    account = state.setdefault("accounts", {}).setdefault(
+        _account_key(username), {"files": {}}
+    )
     known_files = account.setdefault("files", {})
     changed: list[tuple[str, str, str | None]] = []
     signatures: dict[str, dict[str, object]] = {}
@@ -135,11 +137,16 @@ def mark_synced(
     signatures: dict[str, dict[str, object]],
 ) -> None:
     """Update sync state for successful uploads only."""
-    account = state.setdefault("accounts", {}).setdefault(_account_key(username), {"files": {}})
+    account = state.setdefault("accounts", {}).setdefault(
+        _account_key(username), {"files": {}}
+    )
     known_files = account.setdefault("files", {})
     for object_name, success in results:
         if success and object_name in signatures:
-            known_files[object_name] = {**signatures[object_name], "uploaded_at": time.time()}
+            known_files[object_name] = {
+                **signatures[object_name],
+                "uploaded_at": time.time(),
+            }
     _save_sync_state(state)
 
 
@@ -305,7 +312,9 @@ def _human_readable_size(num_bytes: int) -> str:
 @click.option(
     "-j", "--jobs", type=int, default=4, show_default=True, help="Parallel uploads"
 )
-@click.option("--force", is_flag=True, help="Upload all discovered files, ignoring sync state.")
+@click.option(
+    "--force", is_flag=True, help="Upload all discovered files, ignoring sync state."
+)
 def sync(jobs: int, force: bool):
     """Synchronize user benchmarks with remote storage.
 
@@ -335,7 +344,9 @@ def sync(jobs: int, force: bool):
         click.echo("No files to sync.")
         return True
 
-    files_to_upload, sync_state, signatures = filter_changed_files(files, username=username, force=force)
+    files_to_upload, sync_state, signatures = filter_changed_files(
+        files, username=username, force=force
+    )
     skipped = len(files) - len(files_to_upload)
     if not files_to_upload:
         click.echo(f"No changed files to sync. Skipped {skipped} unchanged file(s).")

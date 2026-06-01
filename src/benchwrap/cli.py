@@ -13,8 +13,8 @@ import subprocess
 
 import click
 
-from .cli_auth import (active_username, ensure_data_dir, get_access_token, login,
-                       logout, register, registered)
+from .cli_auth import (active_username, ensure_data_dir, get_access_token,
+                       login, logout, register, registered)
 from .cli_benchmarks import (add_impl_command, describe_impl, list_impl,
                              run_impl)
 from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
