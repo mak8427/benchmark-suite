@@ -163,10 +163,29 @@ def test_run_builtin(monkeypatch):
     (fake_pkg / "std.py").write_text("# x")
     monkeypatch.setattr(cli.res, "files", lambda _: fake_pkg)
     calls = []
-    monkeypatch.setattr(subprocess, "run", lambda args: calls.append(args))
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs)))
     r = CliRunner().invoke(cli.run, ["std"])
     assert r.exit_code == 0
-    assert any("-m" in c for c in calls)
+    assert any("-m" in c[0] for c in calls)
+
+
+def test_run_builtin_sets_target_node_env(monkeypatch):
+    import benchwrap.cli as cli
+
+    importlib.reload(cli)
+    fake_pkg = pathlib.Path.cwd() / "fakepkg"
+    fake_pkg.mkdir(exist_ok=True)
+    (fake_pkg / "std.py").write_text("# x")
+    monkeypatch.setattr(cli.res, "files", lambda _: fake_pkg)
+    calls = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs)))
+
+    r = CliRunner().invoke(cli.run, ["std", "--partition", "medium", "--node", "amp014"])
+
+    assert r.exit_code == 0
+    args, kwargs = calls[0]
+    assert "--partition" in args
+    assert kwargs["env"]["BENCHWRAP_SLURM_NODELIST"] == "amp014"
 
 
 def test_logout_clears_token_file(tmp_path, monkeypatch):

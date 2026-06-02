@@ -111,6 +111,8 @@ def run_impl(
     opt_partition,
     opt_nodes,
     exclusive,
+    opt_nodelist=None,
+    opt_node=None,
     user_root: pathlib.Path | None = None,
     subprocess_module=None,
 ):
@@ -123,6 +125,7 @@ def run_impl(
     proc = subprocess_module or subprocess
     effective_partition = opt_partition if opt_partition is not None else partition
     effective_nodes = opt_nodes if opt_nodes is not None else nodes
+    effective_nodelist = opt_nodelist or opt_node
 
     root = res.files(EXECUTORS_PKG)
     pkg_modules = [
@@ -164,10 +167,17 @@ def run_impl(
             command.append("--exclusive")
         return command
 
+    def slurm_env() -> dict[str, str] | None:
+        if not effective_nodelist:
+            return None
+        env = os.environ.copy()
+        env["BENCHWRAP_SLURM_NODELIST"] = str(effective_nodelist)
+        return env
+
     if choice in pkg_modules:
         click.echo(f"▶ running {EXECUTORS_PKG}.{choice}")
         command = [sys.executable, "-m", f"{EXECUTORS_PKG}.{choice}"]
-        proc.run(extend_slurm_args(command))
+        proc.run(extend_slurm_args(command), env=slurm_env())
 
     elif choice in user_py_files:
         if exclusive:

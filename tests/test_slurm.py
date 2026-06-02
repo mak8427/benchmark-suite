@@ -254,6 +254,7 @@ def test_sbatch_launch_honors_slurm_time_env(monkeypatch, tmp_path):
 
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("BENCHWRAP_SLURM_TIME", "00:10:00")
+    monkeypatch.setenv("BENCHWRAP_SLURM_NODELIST", "amp014")
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     job_id = benchmarks_func.sbatch_launch("flops_matrix_mul_mini", "medium", 1)
@@ -261,5 +262,6 @@ def test_sbatch_launch_honors_slurm_time_env(monkeypatch, tmp_path):
     assert job_id == 12345
     sbatch_cmd = calls[0]
     assert "--time=00:10:00" in sbatch_cmd
+    assert "--nodelist=amp014" in sbatch_cmd
     assert "--partition=medium" in sbatch_cmd
     assert "--nodes=1" in sbatch_cmd

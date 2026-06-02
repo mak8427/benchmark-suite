@@ -10,7 +10,11 @@ import pandas as pd
 
 
 def run_slurm_job(
-    bench_name: str, partition: str, nodes: int = 1, exclusive: bool = False
+    bench_name: str,
+    partition: str,
+    nodes: int = 1,
+    exclusive: bool = False,
+    nodelist: str | None = None,
 ):
     """
     Runs a SLURM job for the specified benchmark name, partition, and number of nodes.
@@ -32,7 +36,13 @@ def run_slurm_job(
             partition = ""
             print("Running No Partition provided")
 
-        job_id = sbatch_launch(bench_name, partition, nodes, exclusive=exclusive)
+        job_id = sbatch_launch(
+            bench_name,
+            partition,
+            nodes,
+            exclusive=exclusive,
+            nodelist=nodelist,
+        )
     except subprocess.CalledProcessError as e:
         print("sbatch stderr:\n", e.stderr, "\n---")
         raise
@@ -104,7 +114,11 @@ def _make_executable(p: pathlib.Path) -> None:
 
 
 def sbatch_launch(
-    bench_name: str, partition: str = "scc-cpu", nodes: int = 1, exclusive: bool = False
+    bench_name: str,
+    partition: str = "scc-cpu",
+    nodes: int = 1,
+    exclusive: bool = False,
+    nodelist: str | None = None,
 ) -> int:
     """
     Launches a benchmarking script on a SLURM cluster using the `sbatch` command. The function configures
@@ -143,6 +157,11 @@ def sbatch_launch(
 
         # N of nodes
         cmd += [f"--nodes={nodes}"]
+
+        selected_nodelist = nodelist or os.environ.get("BENCHWRAP_SLURM_NODELIST", "")
+        selected_nodelist = selected_nodelist.strip()
+        if selected_nodelist:
+            cmd += [f"--nodelist={selected_nodelist}"]
 
         slurm_time = os.environ.get("BENCHWRAP_SLURM_TIME", "").strip()
         if slurm_time:

@@ -92,12 +92,24 @@ def describe(name: str) -> None:
     "-n", "--nodes", "opt_nodes", type=int, required=False, help="Number of nodes"
 )
 @click.option(
+    "--nodelist",
+    "opt_nodelist",
+    required=False,
+    help="Specific SLURM node or node list, e.g. amp014 or amp[001-003].",
+)
+@click.option(
+    "--node",
+    "opt_node",
+    required=False,
+    help="Alias for --nodelist when targeting one compute node.",
+)
+@click.option(
     "--exclusive/--no-exclusive",
     "exclusive",
     default=False,
     help="Request exclusive node access for this benchmark.",
 )
-def run(name, partition, nodes, opt_partition, opt_nodes, exclusive):
+def run(name, partition, nodes, opt_partition, opt_nodes, opt_nodelist, opt_node, exclusive):
     """Execute a benchmark matching ``name``.
 
     Input: optional positional/flagged arguments for benchmark name and SLURM options.
@@ -110,6 +122,8 @@ def run(name, partition, nodes, opt_partition, opt_nodes, exclusive):
         opt_partition,
         opt_nodes,
         exclusive,
+        opt_nodelist=opt_nodelist,
+        opt_node=opt_node,
         user_root=USER_ROOT,
         subprocess_module=subprocess,
     )
