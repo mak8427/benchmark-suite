@@ -33,6 +33,7 @@ class UploadOutcome:
     success: bool
     status_code: int | None = None
     stage: str | None = None
+    error_message: str | None = None
 
 
 def _slurm_job_id(filename: str) -> str | None:
@@ -103,6 +104,35 @@ def _save_sync_state(state: dict) -> None:
 def _object_name(relative_name: str) -> str:
     """Normalize a discovered relative path into the backend object name."""
     return relative_name.replace(os.sep, "/").lstrip("/")[:256]
+
+
+def _format_quota_value(value: object, unit: object) -> str:
+    if not isinstance(value, int):
+        return "?"
+    if unit == "bytes":
+        return _human_readable_size(value)
+    return str(value)
+
+
+def _presign_error_message(response: requests.Response) -> str:
+    """Return a concise message for a failed backend presign response."""
+    try:
+        payload = response.json()
+    except ValueError:
+        return response.text.strip()[:120] or "request rejected"
+
+    detail = payload.get("detail") if isinstance(payload, dict) else payload
+    if isinstance(detail, dict):
+        message = str(detail.get("message") or detail.get("error") or "request rejected")
+        if detail.get("error") in {"object_quota_exceeded", "storage_quota_exceeded"}:
+            unit = detail.get("unit")
+            used = _format_quota_value(detail.get("used"), unit)
+            limit = _format_quota_value(detail.get("limit"), unit)
+            return f"{message} Used {used}/{limit} {unit or ''}.".strip()
+        return message
+    if isinstance(detail, str):
+        return detail
+    return "request rejected"
 
 
 def _file_signature(filepath: str, benchmark_name: str | None) -> dict[str, object]:
@@ -291,8 +321,14 @@ def _upload_one_outcome(
         timeout=(10, 30),
     )
     if response.status_code != 200:
-        table_update(index, f"✗ {object_name}  [presign {response.status_code}]")
-        return UploadOutcome(object_name, False, response.status_code, "presign")
+        error_message = _presign_error_message(response)
+        table_update(
+            index,
+            f"✗ {object_name}  [presign {response.status_code}: {error_message}]",
+        )
+        return UploadOutcome(
+            object_name, False, response.status_code, "presign", error_message
+        )
 
     presign_body = response.json()
     upload_url = presign_body["url"]
@@ -430,14 +466,17 @@ def upload_in_batches(
             f"{workers} upload worker(s)"
         )
         batch_results = _upload_many_outcomes(access_token, batch, workers=workers)
-        if any(
-            result.stage == "presign" and result.status_code == 413
-            for result in batch_results
-        ):
-            click.echo(
-                ":: Presign 413 received. The backend rejected one or more "
-                "objects; remaining batches will continue at the configured size."
-            )
+        quota_messages = sorted(
+            {
+                result.error_message
+                for result in batch_results
+                if result.stage == "presign"
+                and result.status_code == 413
+                and result.error_message
+            }
+        )
+        for message in quota_messages:
+            click.echo(f":: Backend quota: {message}")
         results.extend(batch_results)
     return results
 

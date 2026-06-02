@@ -79,6 +79,42 @@ def test_upload_one_sends_benchmark_name(monkeypatch, tmp_path) -> None:
     assert seen["params"]["benchmark_name"] == "flops_matrix_mul_mini"
 
 
+def test_upload_one_reports_backend_quota_details(monkeypatch, tmp_path) -> None:
+    """Presign quota payloads should be visible to the user."""
+    source = tmp_path / "result.h5"
+    source.write_bytes(b"abc")
+    updates = []
+
+    class Session:
+        headers = {}
+
+        def post(self, url, params, timeout):
+            return SimpleNamespace(
+                status_code=413,
+                text="",
+                json=lambda: {
+                    "detail": {
+                        "error": "object_quota_exceeded",
+                        "message": "Object quota exceeded.",
+                        "used": 20000,
+                        "limit": 20000,
+                        "remaining": 0,
+                        "unit": "objects",
+                    }
+                },
+            )
+
+    monkeypatch.setattr(cli_sync.requests, "Session", Session)
+    monkeypatch.setattr(cli_sync, "table_update", lambda *_args: updates.append(_args[-1]))
+
+    outcome = cli_sync._upload_one_outcome(0, "token", str(source), "result.h5")
+
+    assert outcome.success is False
+    assert outcome.status_code == 413
+    assert outcome.error_message == "Object quota exceeded. Used 20000/20000 objects."
+    assert "Object quota exceeded" in updates[0]
+
+
 def test_benchmark_for_slurm_file_uses_job_directory(monkeypatch, tmp_path) -> None:
     """Slurm profile files should map back to their Benchwrap benchmark folder."""
     jobs = tmp_path / "jobs"
@@ -230,6 +266,36 @@ def test_upload_in_batches_processes_sequential_batches(monkeypatch, tmp_path) -
 
     assert [outcome.success for outcome in results] == [True] * 5
     assert batches == [[0, 1], [2, 3], [4]]
+
+
+def test_upload_in_batches_prints_quota_summary(monkeypatch, tmp_path, capsys) -> None:
+    """Quota failures should be summarized once after a batch."""
+    files = []
+    for name in ("f0.h5", "f1.h5"):
+        source = tmp_path / name
+        source.write_text("x", encoding="utf-8")
+        files.append((len(files), (str(source), name, None)))
+
+    monkeypatch.setattr(
+        cli_sync,
+        "_upload_many_outcomes",
+        lambda *_args, **_kwargs: [
+            cli_sync.UploadOutcome(
+                "f0.h5",
+                False,
+                413,
+                "presign",
+                "Object quota exceeded. Used 20000/20000 objects.",
+            )
+        ],
+    )
+
+    cli_sync.upload_in_batches("token", files, workers=1, batch_size=2)
+
+    assert (
+        "Backend quota: Object quota exceeded. Used 20000/20000 objects."
+        in capsys.readouterr().out
+    )
 
 
 def test_sync_summary_counts_extensions(monkeypatch, tmp_path) -> None:
