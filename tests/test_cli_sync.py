@@ -107,14 +107,16 @@ def test_sync_accepts_metadata_file_tuples(monkeypatch, tmp_path) -> None:
         lambda: [(str(source), "result.h5", "stream_triad")],
     )
     monkeypatch.setattr(
-        cli_sync, "upload_many", lambda *_args, **_kwargs: [("result.h5", True)]
+        cli_sync,
+        "upload_in_batches",
+        lambda *_args, **_kwargs: [cli_sync.UploadOutcome("result.h5", True)],
     )
     monkeypatch.setattr(cli_sync, "table_start", lambda *_args, **_kwargs: None)
 
     result = CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
 
     assert result.exit_code == 0
-    assert "1/1 uploaded successfully" in result.output
+    assert "1 uploaded, 0 failed" in result.output
 
 
 def test_sync_skips_unchanged_files(monkeypatch, tmp_path) -> None:
@@ -134,8 +136,9 @@ def test_sync_skips_unchanged_files(monkeypatch, tmp_path) -> None:
     calls = []
     monkeypatch.setattr(
         cli_sync,
-        "upload_many",
-        lambda *_args, **_kwargs: calls.append(True) or [("result.h5", True)],
+        "upload_in_batches",
+        lambda *_args, **_kwargs: calls.append(True)
+        or [cli_sync.UploadOutcome("result.h5", True)],
     )
 
     first = CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
@@ -164,8 +167,9 @@ def test_sync_force_uploads_unchanged_files(monkeypatch, tmp_path) -> None:
     calls = []
     monkeypatch.setattr(
         cli_sync,
-        "upload_many",
-        lambda *_args, **_kwargs: calls.append(True) or [("result.h5", True)],
+        "upload_in_batches",
+        lambda *_args, **_kwargs: calls.append(True)
+        or [cli_sync.UploadOutcome("result.h5", True)],
     )
 
     CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
@@ -173,3 +177,78 @@ def test_sync_force_uploads_unchanged_files(monkeypatch, tmp_path) -> None:
 
     assert forced.exit_code == 0
     assert len(calls) == 2
+
+
+def test_sync_baseline_marks_files_without_uploading(monkeypatch, tmp_path) -> None:
+    """--baseline should repair local state without scheduling uploads."""
+    source = tmp_path / "result.h5"
+    source.write_bytes(b"abc")
+    monkeypatch.setattr(cli_sync, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(cli_sync, "SYNC_STATE_FILE", tmp_path / "sync-state.json")
+    monkeypatch.setattr(cli_sync, "registered", lambda: True)
+    monkeypatch.setattr(cli_sync, "get_access_token", lambda: "token")
+    monkeypatch.setattr(
+        cli_sync,
+        "list_files_upload",
+        lambda: [(str(source), "result.h5", "stream_triad")],
+    )
+    calls = []
+    monkeypatch.setattr(
+        cli_sync, "upload_in_batches", lambda *_args, **_kwargs: calls.append(True)
+    )
+
+    baseline = CliRunner().invoke(cli_sync.sync, ["--baseline"])
+    normal = CliRunner().invoke(cli_sync.sync, ["--jobs", "1"], input="y\n")
+
+    assert baseline.exit_code == 0
+    assert normal.exit_code == 0
+    assert not calls
+    assert "Baseline complete" in baseline.output
+    assert "No changed files" in normal.output
+
+
+def test_upload_in_batches_processes_sequential_batches(monkeypatch, tmp_path) -> None:
+    """Large syncs should schedule bounded sequential batches."""
+    files = []
+    for index in range(5):
+        source = tmp_path / f"file-{index}.out"
+        source.write_text("x", encoding="utf-8")
+        files.append((index, (str(source), source.name, "coremark_mini")))
+    batches = []
+
+    def fake_upload_many(_token, indexed_files, workers):
+        batch = list(indexed_files)
+        batches.append([idx for idx, _file in batch])
+        return [
+            cli_sync.UploadOutcome(relative_name, True)
+            for _idx, (_path, relative_name, _benchmark) in batch
+        ]
+
+    monkeypatch.setattr(cli_sync, "_upload_many_outcomes", fake_upload_many)
+
+    results = cli_sync.upload_in_batches("token", files, workers=2, batch_size=2)
+
+    assert [outcome.success for outcome in results] == [True] * 5
+    assert batches == [[0, 1], [2, 3], [4]]
+
+
+def test_sync_summary_counts_extensions(monkeypatch, tmp_path) -> None:
+    """Preflight output should summarize common Benchwrap artifact types."""
+    files = []
+    for name in ("a.h5", "b.out", "c.err", "d.txt"):
+        source = tmp_path / name
+        source.write_text("x", encoding="utf-8")
+        files.append((str(source), name, "coremark_mini"))
+    monkeypatch.setattr(cli_sync, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(cli_sync, "SYNC_STATE_FILE", tmp_path / "sync-state.json")
+    monkeypatch.setattr(cli_sync, "registered", lambda: True)
+    monkeypatch.setattr(cli_sync, "get_access_token", lambda: "token")
+    monkeypatch.setattr(cli_sync, "list_files_upload", lambda: files)
+
+    result = CliRunner().invoke(cli_sync.sync, ["--baseline"])
+
+    assert result.exit_code == 0
+    assert ".h5: 1" in result.output
+    assert ".out: 1" in result.output
+    assert ".err: 1" in result.output
+    assert "other: 1" in result.output

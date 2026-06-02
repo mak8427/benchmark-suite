@@ -13,8 +13,8 @@ import subprocess
 
 import click
 
-from .cli_auth import (active_username, ensure_data_dir, get_access_token,
-                       login, logout, register, registered)
+from .cli_auth import (active_username, auth_group, ensure_data_dir,
+                       get_access_token, login, logout, register, registered)
 from .cli_benchmarks import (add_impl_command, describe_impl, list_impl,
                              run_impl)
 from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
@@ -102,6 +102,7 @@ def add(source):
 
 benchwrap.add_command(sync)
 benchwrap.add_command(logout)
+benchwrap.add_command(auth_group)
 
 # Backwards compatibility aliases -------------------------------------------------
 BASE = BASE_URL
@@ -125,6 +126,7 @@ __all__ = [
     "sync",
     "ensure_data_dir",
     "active_username",
+    "auth_group",
     "register",
     "registered",
     "get_access_token",

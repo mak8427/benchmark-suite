@@ -231,3 +231,28 @@ def test_cli_slurm_commands_exist():
         assert (
             benchmark in modules
         ), f"Expected benchmark {benchmark} not found in {modules}"
+
+
+def test_sbatch_launch_honors_slurm_time_env(monkeypatch, tmp_path):
+    """BENCHWRAP_SLURM_TIME should become an sbatch --time override."""
+    from benchwrap.executors.utils import benchmarks_func
+
+    calls = []
+
+    def fake_run(cmd, check, capture_output=False, text=False):
+        calls.append(cmd)
+        if cmd[0] == "sbatch":
+            return subprocess.CompletedProcess(cmd, 0, stdout="12345\n", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("BENCHWRAP_SLURM_TIME", "00:10:00")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    job_id = benchmarks_func.sbatch_launch("flops_matrix_mul_mini", "medium", 1)
+
+    assert job_id == 12345
+    sbatch_cmd = calls[0]
+    assert "--time=00:10:00" in sbatch_cmd
+    assert "--partition=medium" in sbatch_cmd
+    assert "--nodes=1" in sbatch_cmd

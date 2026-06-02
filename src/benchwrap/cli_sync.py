@@ -9,6 +9,7 @@ import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from typing import Iterable
 
 import click
@@ -21,6 +22,17 @@ from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
                            table_start, table_update)
 
 SYNC_STATE_FILE = DATA_DIR / "sync-state.json"
+DEFAULT_BATCH_SIZE = 500
+
+
+@dataclass(frozen=True)
+class UploadOutcome:
+    """Result for one upload attempt."""
+
+    object_name: str
+    success: bool
+    status_code: int | None = None
+    stage: str | None = None
 
 
 def _slurm_job_id(filename: str) -> str | None:
@@ -88,12 +100,27 @@ def _save_sync_state(state: dict) -> None:
     SYNC_STATE_FILE.write_text(json.dumps(state, indent=2, sort_keys=True))
 
 
+def _object_name(relative_name: str) -> str:
+    """Normalize a discovered relative path into the backend object name."""
+    return relative_name.replace(os.sep, "/").lstrip("/")[:256]
+
+
 def _file_signature(filepath: str, benchmark_name: str | None) -> dict[str, object]:
     stat = os.stat(filepath)
     return {
         "size": stat.st_size,
         "mtime_ns": stat.st_mtime_ns,
         "hash": _fast_hash(filepath),
+        "benchmark_name": benchmark_name,
+    }
+
+
+def _file_quick_signature(filepath: str, benchmark_name: str | None) -> dict[str, object]:
+    """Return cheap stat metadata used before hashing file contents."""
+    stat = os.stat(filepath)
+    return {
+        "size": stat.st_size,
+        "mtime_ns": stat.st_mtime_ns,
         "benchmark_name": benchmark_name,
     }
 
@@ -117,11 +144,24 @@ def filter_changed_files(
     changed: list[tuple[str, str, str | None]] = []
     signatures: dict[str, dict[str, object]] = {}
     for filepath, relative_name, benchmark_name in files:
-        object_name = relative_name.replace(os.sep, "/").lstrip("/")[:256]
+        object_name = _object_name(relative_name)
+        quick_signature = _file_quick_signature(filepath, benchmark_name)
+        known_entry = known_files.get(object_name, {})
+        known_quick = {
+            key: known_entry.get(key) for key in ("size", "mtime_ns", "benchmark_name")
+        }
+        if not force and known_quick == quick_signature:
+            if "hash" in known_entry:
+                signatures[object_name] = {
+                    **quick_signature,
+                    "hash": known_entry["hash"],
+                }
+            continue
+
         signature = _file_signature(filepath, benchmark_name)
         signatures[object_name] = signature
         known_signature = {
-            key: known_files.get(object_name, {}).get(key)
+            key: known_entry.get(key)
             for key in ("size", "mtime_ns", "hash", "benchmark_name")
         }
         if force or known_signature != signature:
@@ -129,11 +169,21 @@ def filter_changed_files(
     return changed, state, signatures
 
 
+def build_signatures(
+    files: list[tuple[str, str, str | None]],
+) -> dict[str, dict[str, object]]:
+    """Compute full signatures for a file list, used by explicit baseline mode."""
+    return {
+        _object_name(relative_name): _file_signature(filepath, benchmark_name)
+        for filepath, relative_name, benchmark_name in files
+    }
+
+
 def mark_synced(
     state: dict,
     *,
     username: str | None,
-    results: list[tuple[str, bool]],
+    results: list[tuple[str, bool]] | list[UploadOutcome],
     signatures: dict[str, dict[str, object]],
 ) -> None:
     """Update sync state for successful uploads only."""
@@ -141,7 +191,11 @@ def mark_synced(
         _account_key(username), {"files": {}}
     )
     known_files = account.setdefault("files", {})
-    for object_name, success in results:
+    for result in results:
+        if isinstance(result, UploadOutcome):
+            object_name, success = result.object_name, result.success
+        else:
+            object_name, success = result
         if success and object_name in signatures:
             known_files[object_name] = {
                 **signatures[object_name],
@@ -180,17 +234,46 @@ def list_files_upload() -> list[tuple[str, str, str | None]]:
                 (filepath, archive_name, _benchmark_for_file(filepath, job_benchmarks))
             )
 
-    click.echo(f"Found {len(files)} files to upload.")
     return files
 
 
-def upload_one(
+def _extension_bucket(path: str) -> str:
+    suffix = os.path.splitext(path)[1].lower()
+    return suffix if suffix in {".h5", ".out", ".err"} else "other"
+
+
+def summarize_files(files: list[tuple[str, str, str | None]]) -> dict[str, dict[str, int]]:
+    """Return compact file-count and byte-count summaries by extension bucket."""
+    summary = {
+        key: {"count": 0, "bytes": 0} for key in (".h5", ".out", ".err", "other")
+    }
+    for filepath, relative_name, _benchmark_name in files:
+        bucket = _extension_bucket(relative_name)
+        summary[bucket]["count"] += 1
+        summary[bucket]["bytes"] += os.path.getsize(filepath)
+    return summary
+
+
+def _print_file_summary(label: str, files: list[tuple[str, str, str | None]]) -> None:
+    total_size = sum(os.path.getsize(filepath) for filepath, _, _ in files)
+    click.echo(f"{label}: {len(files)} files, {_human_readable_size(total_size)}")
+    summary = summarize_files(files)
+    parts = []
+    for key in (".h5", ".out", ".err", "other"):
+        count = summary[key]["count"]
+        if count:
+            parts.append(f"{key}: {count}")
+    if parts:
+        click.echo("  " + ", ".join(parts))
+
+
+def _upload_one_outcome(
     index: int,
     access_token: str,
     filepath: str,
     object_name: str,
     benchmark_name: str | None = None,
-) -> tuple[str, bool]:
+) -> UploadOutcome:
     """Upload one file while updating the row ``index`` in the progress table.
 
     Input: row index, auth token, local path, and S3-style object name.
@@ -209,7 +292,7 @@ def upload_one(
     )
     if response.status_code != 200:
         table_update(index, f"✗ {object_name}  [presign {response.status_code}]")
-        return object_name, False
+        return UploadOutcome(object_name, False, response.status_code, "presign")
 
     presign_body = response.json()
     upload_url = presign_body["url"]
@@ -238,7 +321,7 @@ def upload_one(
         table_update(
             index, f"{object_name[:24]:<24} ✓ zero-byte [{put_response.status_code}]"
         )
-        return object_name, put_response.ok
+        return UploadOutcome(object_name, put_response.ok, put_response.status_code, "upload")
 
     start_time = time.time()
     progress_file = ProgressFile(
@@ -267,24 +350,38 @@ def upload_one(
         else f"{object_name[:24]:<24} ✗ [{put_response.status_code}]"
     )
     table_update(index, final_status)
-    return object_name, put_response.ok
+    return UploadOutcome(object_name, put_response.ok, put_response.status_code, "upload")
 
 
-def upload_many(
+def upload_one(
+    index: int,
+    access_token: str,
+    filepath: str,
+    object_name: str,
+    benchmark_name: str | None = None,
+) -> tuple[str, bool]:
+    """Upload one file, returning the historical two-item result tuple."""
+    outcome = _upload_one_outcome(
+        index, access_token, filepath, object_name, benchmark_name
+    )
+    return outcome.object_name, outcome.success
+
+
+def _upload_many_outcomes(
     access_token: str,
     indexed_files: Iterable[tuple[int, tuple[str, str, str | None]]],
     workers: int = 4,
-) -> list[tuple[str, bool]]:
+) -> list[UploadOutcome]:
     """Upload multiple files concurrently using a worker pool.
 
     Input: access token, iterable of ``(row_index, file_tuple)`` pairs, worker count.
     Output: list of ``(object_name, success_flag)`` results collected from workers.
     """
-    results: list[tuple[str, bool]] = []
+    results: list[UploadOutcome] = []
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
             executor.submit(
-                upload_one,
+                _upload_one_outcome,
                 idx,
                 access_token,
                 filepath,
@@ -292,10 +389,56 @@ def upload_many(
                 benchmark_name,
             )
             for idx, (filepath, relative_name, benchmark_name) in indexed_files
-            for object_name in [relative_name.replace(os.sep, "/").lstrip("/")[:256]]
+            for object_name in [_object_name(relative_name)]
         ]
         for future in as_completed(futures):
             results.append(future.result())
+    return results
+
+
+def upload_many(
+    access_token: str,
+    indexed_files: Iterable[tuple[int, tuple[str, str, str | None]]],
+    workers: int = 4,
+) -> list[tuple[str, bool]]:
+    """Upload multiple files, returning the historical two-item result tuples."""
+    return [
+        (outcome.object_name, outcome.success)
+        for outcome in _upload_many_outcomes(access_token, indexed_files, workers)
+    ]
+
+
+def _chunks(items: list[tuple[int, tuple[str, str, str | None]]], size: int):
+    for start in range(0, len(items), size):
+        yield start // size + 1, items[start : start + size]
+
+
+def upload_in_batches(
+    access_token: str,
+    indexed_files: list[tuple[int, tuple[str, str, str | None]]],
+    *,
+    workers: int,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+) -> list[UploadOutcome]:
+    """Upload files in sequential batches to avoid backend request storms."""
+    bounded_size = max(1, batch_size)
+    results: list[UploadOutcome] = []
+    total_batches = (len(indexed_files) + bounded_size - 1) // bounded_size
+    for batch_number, batch in _chunks(indexed_files, bounded_size):
+        click.echo(
+            f":: Batch {batch_number}/{total_batches}: {len(batch)} file(s), "
+            f"{workers} upload worker(s)"
+        )
+        batch_results = _upload_many_outcomes(access_token, batch, workers=workers)
+        if any(
+            result.stage == "presign" and result.status_code == 413
+            for result in batch_results
+        ):
+            click.echo(
+                ":: Presign 413 received. The backend rejected one or more "
+                "objects; remaining batches will continue at the configured size."
+            )
+        results.extend(batch_results)
     return results
 
 
@@ -315,7 +458,19 @@ def _human_readable_size(num_bytes: int) -> str:
 @click.option(
     "--force", is_flag=True, help="Upload all discovered files, ignoring sync state."
 )
-def sync(jobs: int, force: bool):
+@click.option(
+    "--baseline",
+    is_flag=True,
+    help="Mark discovered files as synced for the active account without uploading.",
+)
+@click.option(
+    "--batch-size",
+    type=int,
+    default=DEFAULT_BATCH_SIZE,
+    show_default=True,
+    help="Maximum files scheduled per sequential upload batch.",
+)
+def sync(jobs: int, force: bool, baseline: bool, batch_size: int):
     """Synchronize user benchmarks with remote storage.
 
     Input: number of parallel upload jobs to run.
@@ -344,18 +499,37 @@ def sync(jobs: int, force: bool):
         click.echo("No files to sync.")
         return True
 
+    _print_file_summary("Discovered", files)
+
+    if baseline:
+        if force:
+            click.echo("--force has no effect with --baseline.")
+        signatures = build_signatures(files)
+        state = _load_sync_state()
+        results = [(_object_name(relative_name), True) for _, relative_name, _ in files]
+        mark_synced(state, username=username, results=results, signatures=signatures)
+        click.echo(
+            f"✔ Baseline complete. Marked {len(files)} file(s) as synced "
+            "without uploading."
+        )
+        return True
+
     files_to_upload, sync_state, signatures = filter_changed_files(
         files, username=username, force=force
     )
     skipped = len(files) - len(files_to_upload)
+    click.echo(f"Changed: {len(files_to_upload)} file(s), skipped: {skipped}")
     if not files_to_upload:
-        click.echo(f"No changed files to sync. Skipped {skipped} unchanged file(s).")
+        click.echo("No changed files to sync.")
         return True
+
+    _print_file_summary("Upload plan", files_to_upload)
 
     total_size = sum(os.path.getsize(filepath) for filepath, _, _ in files_to_upload)
     click.echo(
         f":: Synchronizing {len(files_to_upload)} changed file(s) "
-        f"({skipped} skipped, {_human_readable_size(total_size)}) with {jobs} jobs"
+        f"({skipped} skipped, {_human_readable_size(total_size)}) with {jobs} jobs "
+        f"in batches of up to {max(1, batch_size)}"
     )
     if not click.confirm(":: Proceed?", default=True):
         click.echo("Aborted.")
@@ -363,14 +537,22 @@ def sync(jobs: int, force: bool):
 
     table_start(len(files_to_upload))
     indexed_files = list(enumerate(files_to_upload))
-    results = upload_many(access_token, indexed_files, workers=jobs)
+    results = upload_in_batches(
+        access_token, indexed_files, workers=jobs, batch_size=batch_size
+    )
     mark_synced(sync_state, username=username, results=results, signatures=signatures)
 
-    successful_uploads = sum(1 for _, success in results if success)
+    successful_uploads = sum(1 for result in results if result.success)
+    failed_uploads = len(results) - successful_uploads
     click.echo(
-        f":: Summary: {successful_uploads}/{len(files_to_upload)} uploaded successfully, "
+        f":: Summary: {successful_uploads} uploaded, {failed_uploads} failed, "
+        f"{skipped} skipped, "
         f"{_human_readable_size(total_size)} total"
     )
+    if failed_uploads:
+        click.echo("✗ Sync completed with failed upload(s).")
+        return False
+
     click.echo("✔ Sync complete.")
 
     return True

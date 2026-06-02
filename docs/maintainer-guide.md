@@ -77,6 +77,14 @@ benchwrap sync
 
 Normal sync is incremental. The CLI stores an account-scoped local sync state in `~/.local/share/benchwrap/sync-state.json`; each entry records file size, `mtime_ns`, benchmark name, and a BLAKE2b content hash. Unchanged files for the active account are skipped. `benchwrap sync --force` bypasses that state and reuploads every discovered file.
 
+The first pass uses cheap file metadata (`size`, `mtime_ns`, benchmark name) to skip unchanged files. Content hashing is still recorded for changed files and explicit baselines, but normal repeat syncs should not need to hash every historical artifact. This follows the same practical shape as tools such as rsync: fast metadata checks for the common case, stronger content checks when a file is new, changed, or being repaired.
+
+Use `benchwrap sync --baseline` to repair local sync state without uploading bytes. This is useful when a campaign was synced from a staged `XDG_DATA_HOME`, when the token was switched to another account, or when local state was deleted but the files are already known to be uploaded. Baseline state is still account-scoped.
+
+Large syncs are uploaded in sequential batches. The default batch size is 500 files and `--jobs` controls concurrency inside each batch, not the number of batches launched at once. This keeps presign traffic bounded and avoids request storms against the backend.
+
+`benchwrap auth status` prints the active account, backend URL, token-file path, refresh validity, and per-account sync-state counts without revealing token values. `benchwrap auth switch` logs in as another account while preserving existing sync-state namespaces.
+
 `benchwrap logout` clears the local refresh token. The sync state is still account-scoped, so logging into another account does not make the new account reuse the previous user's uploaded-file cache.
 
 Files from `~/.local/share/benchwrap/jobs/<benchmark>/...` carry `<benchmark>` directly.
@@ -181,6 +189,14 @@ If Grafana shows `unknown` benchmark names for new uploads, check:
 2. Whether a local `jobs/<benchmark>/job_<jobid>` folder existed when syncing Slurm HDF5 files.
 3. Whether the backend has been updated to a version that stores `benchmark_name`.
 4. Whether the analysis pipeline reprocessed the S3 object after metadata support was added.
+
+If Grafana does not show new jobs at all, check the pipeline in this order:
+
+1. Confirm the object exists in S3 under the expected user prefix and has the expected size.
+2. Confirm `auth.db.storage_objects` has rows for the account and benchmark.
+3. Confirm the rows moved from `presigned` to `processed`; rows stuck at `presigned` usually mean the upload exists but the analysis listener/pipeline has not processed it.
+4. Confirm normalized PostgreSQL dashboard tables contain rows for the new object/job id.
+5. Confirm Grafana is using the expected org, datasource, benchmark variable, and time range.
 
 ## Known Maintenance Tasks
 

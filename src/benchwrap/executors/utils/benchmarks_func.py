@@ -144,6 +144,10 @@ def sbatch_launch(
         # N of nodes
         cmd += [f"--nodes={nodes}"]
 
+        slurm_time = os.environ.get("BENCHWRAP_SLURM_TIME", "").strip()
+        if slurm_time:
+            cmd += [f"--time={slurm_time}"]
+
         # Job name
         cmd += [f"--job-name={job_label}"]
 

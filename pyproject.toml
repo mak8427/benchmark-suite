@@ -2,6 +2,7 @@
 name = "benchwrap"
 version = "0.3.17"
 description = "CLI wrapper with energy-aware benchmarking"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "click>=8.1",
@@ -17,7 +18,7 @@ dependencies = [
 benchwrap = "benchwrap.cli:benchwrap"
 
 [tool.setuptools]
-include-package-data = true
+include-package-data = false
 
 [tool.setuptools.package-dir]
 "" = "src"
@@ -25,6 +26,7 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = false
+exclude = ["benchwrap.data*"]
 
 [tool.setuptools.package-data]
 "*" = ["benchmarks/*/*.sh", "benchmarks/*/*.txt"]

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+from pathlib import Path
 
 import click
 import requests
@@ -61,6 +62,25 @@ def active_username() -> str | None:
     """Return the locally stored active username when known."""
     value = _read_token_state().get("username")
     return str(value) if value else None
+
+
+def _sync_state_account_counts() -> dict[str, int]:
+    """Return account names and stored file counts from sync state."""
+    state_file = DATA_DIR / "sync-state.json"
+    if not state_file.exists():
+        return {}
+    try:
+        data = json.loads(state_file.read_text())
+    except json.JSONDecodeError:
+        return {}
+    accounts = data.get("accounts", {}) if isinstance(data, dict) else {}
+    if not isinstance(accounts, dict):
+        return {}
+    counts: dict[str, int] = {}
+    for account, payload in accounts.items():
+        files = payload.get("files", {}) if isinstance(payload, dict) else {}
+        counts[str(account)] = len(files) if isinstance(files, dict) else 0
+    return counts
 
 
 def register() -> str | bool:
@@ -161,3 +181,57 @@ def logout() -> None:
     if TOK_FILE.exists():
         TOK_FILE.write_text("")
     click.echo("✔ Logged out.")
+
+
+@click.group(name="auth")
+def auth_group() -> None:
+    """Inspect and change Benchwrap authentication state."""
+
+
+@auth_group.command("status")
+@click.option(
+    "--check-refresh/--no-check-refresh",
+    default=True,
+    show_default=True,
+    help="Exchange the refresh token to verify it is still valid.",
+)
+def auth_status(check_refresh: bool) -> None:
+    """Show the active account, token location, and sync-state namespace."""
+    ensure_data_dir()
+    token_state = _read_token_state()
+    username = token_state.get("username")
+    click.echo(f"Backend: {BASE_URL}")
+    click.echo(f"Token file: {TOK_FILE}")
+    click.echo(f"Active account: {username or 'unknown'}")
+    click.echo(f"Refresh token present: {bool(token_state.get('refresh'))}")
+    click.echo(f"Token file mode: {oct(Path(TOK_FILE).stat().st_mode & 0o777)}")
+
+    if check_refresh and token_state.get("refresh"):
+        access = get_access_token()
+        click.echo(f"Refresh valid: {bool(access)}")
+
+    counts = _sync_state_account_counts()
+    if not counts:
+        click.echo("Sync-state accounts: none")
+        return
+    click.echo("Sync-state accounts:")
+    for account, count in sorted(counts.items()):
+        marker = " *" if account == active_username() else ""
+        click.echo(f"  {account}: {count} file(s){marker}")
+
+
+@auth_group.command("switch")
+def auth_switch() -> None:
+    """Login as another account and make it active."""
+    previous = active_username()
+    access = login()
+    if not access:
+        raise click.ClickException("Account switch failed.")
+    current = active_username()
+    click.echo(f"Previous account: {previous or 'none'}")
+    click.echo(f"Active account: {current or 'unknown'}")
+    counts = _sync_state_account_counts()
+    current_count = counts.get(current or "", 0)
+    click.echo(f"Sync-state files for active account: {current_count}")
+    if current and current_count == 0:
+        click.echo("Tip: run `benchwrap sync --baseline` if existing remote files are already uploaded.")
