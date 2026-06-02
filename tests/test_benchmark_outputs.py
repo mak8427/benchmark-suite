@@ -9,7 +9,6 @@ import sys
 
 import pytest
 
-
 WORKLOADS = [
     (
         "benchwrap.benchmarks.coremark_mini.workload",
@@ -63,7 +62,9 @@ WORKLOADS = [
 
 
 @pytest.mark.parametrize(("module", "extra_env", "patterns"), WORKLOADS)
-def test_quick_benchmark_workloads_emit_expected_output(module, extra_env, patterns) -> None:
+def test_quick_benchmark_workloads_emit_expected_output(
+    module, extra_env, patterns
+) -> None:
     """CI-sized workloads should run and emit stable success signatures."""
     env = {
         **os.environ,

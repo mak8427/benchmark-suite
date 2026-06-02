@@ -16,10 +16,22 @@ import click
 import requests
 
 from .cli_auth import get_access_token, login, register, registered
-from .cli_constants import (BASE_URL, DATA_DIR, JOBS_DEFAULT, MINIO_TUNNEL_URL,
-                            SERVER_URL, SLURM_DEFAULT, TUNNELLING_URL)
-from .cli_progress import (ProgressFile, inline_progress_line, pac_line,
-                           table_start, table_update)
+from .cli_constants import (
+    BASE_URL,
+    DATA_DIR,
+    JOBS_DEFAULT,
+    MINIO_TUNNEL_URL,
+    SERVER_URL,
+    SLURM_DEFAULT,
+    TUNNELLING_URL,
+)
+from .cli_progress import (
+    ProgressFile,
+    inline_progress_line,
+    pac_line,
+    table_start,
+    table_update,
+)
 
 SYNC_STATE_FILE = DATA_DIR / "sync-state.json"
 DEFAULT_BATCH_SIZE = 500
@@ -123,7 +135,9 @@ def _presign_error_message(response: requests.Response) -> str:
 
     detail = payload.get("detail") if isinstance(payload, dict) else payload
     if isinstance(detail, dict):
-        message = str(detail.get("message") or detail.get("error") or "request rejected")
+        message = str(
+            detail.get("message") or detail.get("error") or "request rejected"
+        )
         if detail.get("error") in {"object_quota_exceeded", "storage_quota_exceeded"}:
             unit = detail.get("unit")
             used = _format_quota_value(detail.get("used"), unit)
@@ -145,7 +159,9 @@ def _file_signature(filepath: str, benchmark_name: str | None) -> dict[str, obje
     }
 
 
-def _file_quick_signature(filepath: str, benchmark_name: str | None) -> dict[str, object]:
+def _file_quick_signature(
+    filepath: str, benchmark_name: str | None
+) -> dict[str, object]:
     """Return cheap stat metadata used before hashing file contents."""
     stat = os.stat(filepath)
     return {
@@ -272,7 +288,9 @@ def _extension_bucket(path: str) -> str:
     return suffix if suffix in {".h5", ".out", ".err"} else "other"
 
 
-def summarize_files(files: list[tuple[str, str, str | None]]) -> dict[str, dict[str, int]]:
+def summarize_files(
+    files: list[tuple[str, str, str | None]],
+) -> dict[str, dict[str, int]]:
     """Return compact file-count and byte-count summaries by extension bucket."""
     summary = {
         key: {"count": 0, "bytes": 0} for key in (".h5", ".out", ".err", "other")
@@ -357,7 +375,9 @@ def _upload_one_outcome(
         table_update(
             index, f"{object_name[:24]:<24} ✓ zero-byte [{put_response.status_code}]"
         )
-        return UploadOutcome(object_name, put_response.ok, put_response.status_code, "upload")
+        return UploadOutcome(
+            object_name, put_response.ok, put_response.status_code, "upload"
+        )
 
     start_time = time.time()
     progress_file = ProgressFile(
@@ -386,7 +406,9 @@ def _upload_one_outcome(
         else f"{object_name[:24]:<24} ✗ [{put_response.status_code}]"
     )
     table_update(index, final_status)
-    return UploadOutcome(object_name, put_response.ok, put_response.status_code, "upload")
+    return UploadOutcome(
+        object_name, put_response.ok, put_response.status_code, "upload"
+    )
 
 
 def upload_one(

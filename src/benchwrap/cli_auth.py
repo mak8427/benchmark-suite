@@ -234,4 +234,6 @@ def auth_switch() -> None:
     current_count = counts.get(current or "", 0)
     click.echo(f"Sync-state files for active account: {current_count}")
     if current and current_count == 0:
-        click.echo("Tip: run `benchwrap sync --baseline` if existing remote files are already uploaded.")
+        click.echo(
+            "Tip: run `benchwrap sync --baseline` if existing remote files are already uploaded."
+        )

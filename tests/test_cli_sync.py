@@ -105,7 +105,9 @@ def test_upload_one_reports_backend_quota_details(monkeypatch, tmp_path) -> None
             )
 
     monkeypatch.setattr(cli_sync.requests, "Session", Session)
-    monkeypatch.setattr(cli_sync, "table_update", lambda *_args: updates.append(_args[-1]))
+    monkeypatch.setattr(
+        cli_sync, "table_update", lambda *_args: updates.append(_args[-1])
+    )
 
     outcome = cli_sync._upload_one_outcome(0, "token", str(source), "result.h5")
 

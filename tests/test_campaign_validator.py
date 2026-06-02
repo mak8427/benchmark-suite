@@ -6,7 +6,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / ".ci/scripts/validate-slurm-campaign.py"
 
@@ -55,7 +54,9 @@ def test_campaign_validator_accepts_successful_manifest(monkeypatch, tmp_path) -
     monkeypatch.setenv("BENCHWRAP_CAMPAIGN_ARTIFACTS", str(artifacts))
     validator = _load_validator()
     monkeypatch.setattr(validator, "read_sacct", lambda _job_id: "42|COMPLETED|0:0")
-    monkeypatch.setattr(validator, "parse_args", lambda: type("Args", (), {"manifest": manifest})())
+    monkeypatch.setattr(
+        validator, "parse_args", lambda: type("Args", (), {"manifest": manifest})()
+    )
 
     assert validator.main() == 0
     record = json.loads(manifest.read_text().strip())
@@ -64,7 +65,9 @@ def test_campaign_validator_accepts_successful_manifest(monkeypatch, tmp_path) -
     assert (artifacts / "coremark_mini/job_42/slurm-42.out").is_file()
 
 
-def test_campaign_validator_rejects_missing_output_signature(monkeypatch, tmp_path) -> None:
+def test_campaign_validator_rejects_missing_output_signature(
+    monkeypatch, tmp_path
+) -> None:
     """Missing stdout signatures should fail the campaign."""
     home = tmp_path / "home"
     artifacts = tmp_path / "artifacts"
@@ -95,7 +98,9 @@ def test_campaign_validator_rejects_missing_output_signature(monkeypatch, tmp_pa
     monkeypatch.setenv("BENCHWRAP_CAMPAIGN_ARTIFACTS", str(artifacts))
     validator = _load_validator()
     monkeypatch.setattr(validator, "read_sacct", lambda _job_id: "")
-    monkeypatch.setattr(validator, "parse_args", lambda: type("Args", (), {"manifest": manifest})())
+    monkeypatch.setattr(
+        validator, "parse_args", lambda: type("Args", (), {"manifest": manifest})()
+    )
 
     assert validator.main() == 1
     assert json.loads(manifest.read_text().strip())["state"] == "failed"
