@@ -25,13 +25,7 @@ from .cli_constants import (
     SLURM_DEFAULT,
     TUNNELLING_URL,
 )
-from .cli_progress import (
-    ProgressFile,
-    inline_progress_line,
-    pac_line,
-    table_start,
-    table_update,
-)
+from .cli_progress import ProgressFile, pac_line, table_start, table_update
 
 SYNC_STATE_FILE = DATA_DIR / "sync-state.json"
 DEFAULT_BATCH_SIZE = 500

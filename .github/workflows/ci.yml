@@ -95,6 +95,19 @@ jobs:
     name: Slurm E2E
     runs-on: ubuntu-latest
     needs: package
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: slurm_acct_db
+        ports:
+          - 8888:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

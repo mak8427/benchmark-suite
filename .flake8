@@ -1,0 +1,9 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, E501, W503
+per-file-ignores =
+    src/benchwrap/benchmarks/ior_test/launcher.py:F401,F541
+    src/benchwrap/executors/*.py:F401,E712
+    tests/test_cli.py:E402
+    tests/test_core.py:F401
+    tests/test_slurm.py:F401

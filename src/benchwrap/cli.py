@@ -13,16 +13,42 @@ import subprocess
 
 import click
 
-from .cli_auth import (active_username, auth_group, ensure_data_dir,
-                       get_access_token, login, logout, register, registered)
-from .cli_benchmarks import (add_impl_command, describe_impl, list_impl,
-                             run_impl)
-from .cli_constants import (BASE_URL, BENCH_PKG, BENCH_ROOT, DATA_DIR,
-                            EXECUTORS_PKG, TOK_FILE, USER_ROOT)
-from .cli_progress import (PRINT_LOCK, ProgressFile, inline_progress_line,
-                           pac_line, safe_print, table_start, table_update)
-from .cli_sync import (_human_readable_size, list_files_upload, sync,
-                       upload_many, upload_one)
+from .cli_auth import (
+    active_username,
+    auth_group,
+    ensure_data_dir,
+    get_access_token,
+    login,
+    logout,
+    register,
+    registered,
+)
+from .cli_benchmarks import add_impl_command, describe_impl, list_impl, run_impl
+from .cli_constants import (
+    BASE_URL,
+    BENCH_PKG,
+    BENCH_ROOT,
+    DATA_DIR,
+    EXECUTORS_PKG,
+    TOK_FILE,
+    USER_ROOT,
+)
+from .cli_progress import (
+    PRINT_LOCK,
+    ProgressFile,
+    inline_progress_line,
+    pac_line,
+    safe_print,
+    table_start,
+    table_update,
+)
+from .cli_sync import (
+    _human_readable_size,
+    list_files_upload,
+    sync,
+    upload_many,
+    upload_one,
+)
 
 
 @click.group()

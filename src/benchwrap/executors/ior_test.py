@@ -1,7 +1,12 @@
 import argparse
 
-from .utils.benchmarks_func import (check_io500, check_ior, get_io500, get_ior,
-                                    run_slurm_job)
+from .utils.benchmarks_func import (
+    check_io500,
+    check_ior,
+    get_io500,
+    get_ior,
+    run_slurm_job,
+)
 
 
 def main():

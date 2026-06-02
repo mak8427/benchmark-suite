@@ -121,7 +121,10 @@ echo "Test job completed at $(date)"
         """Test that SLURM benchmark utilities can be imported."""
         try:
             from benchwrap.executors.utils.benchmarks_func import (
-                h5_analysis, run_slurm_job, sbatch_launch)
+                h5_analysis,
+                run_slurm_job,
+                sbatch_launch,
+            )
 
             # If we get here, imports succeeded
             assert callable(sbatch_launch)
@@ -134,8 +137,10 @@ echo "Test job completed at $(date)"
         """Test that SLURM benchmark functions have expected signatures."""
         import inspect
 
-        from benchwrap.executors.utils.benchmarks_func import (run_slurm_job,
-                                                               sbatch_launch)
+        from benchwrap.executors.utils.benchmarks_func import (
+            run_slurm_job,
+            sbatch_launch,
+        )
 
         # Test sbatch_launch signature
         sig = inspect.signature(sbatch_launch)
@@ -158,8 +163,10 @@ def test_no_slurm_graceful_degradation():
 
     # Try to import the benchmark functions - this should still work
     try:
-        from benchwrap.executors.utils.benchmarks_func import (run_slurm_job,
-                                                               sbatch_launch)
+        from benchwrap.executors.utils.benchmarks_func import (
+            run_slurm_job,
+            sbatch_launch,
+        )
 
         # Functions should be importable even without SLURM
     except ImportError as e:

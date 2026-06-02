@@ -11,7 +11,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
 PATTERNS = {
     "coremark_mini": [r"coremark_mini", r"digest=\d+", r"score="],
     "fft_1d_small": [r"fft_1d_small", r"checksum=", r"estimated_gflops="],
@@ -44,11 +43,19 @@ def read_sacct(job_id: str) -> str:
 
 def main() -> int:
     args = parse_args()
-    artifact_root = Path(os.getenv("BENCHWRAP_CAMPAIGN_ARTIFACTS", "campaign-artifacts"))
+    artifact_root = Path(
+        os.getenv("BENCHWRAP_CAMPAIGN_ARTIFACTS", "campaign-artifacts")
+    )
     jobs_root = Path.home() / ".local/share/benchwrap/jobs"
-    profile_root = Path(os.getenv("BENCHWRAP_SLURM_PROFILE_ROOT", "/opt/misc/profiling/u18101"))
+    profile_root = Path(
+        os.getenv("BENCHWRAP_SLURM_PROFILE_ROOT", "/opt/misc/profiling/u18101")
+    )
 
-    records = [json.loads(line) for line in args.manifest.read_text().splitlines() if line.strip()]
+    records = [
+        json.loads(line)
+        for line in args.manifest.read_text().splitlines()
+        if line.strip()
+    ]
     validated = []
     errors: list[str] = []
 
@@ -69,15 +76,25 @@ def main() -> int:
         out_text = out_path.read_text(errors="replace") if out_path.exists() else ""
         err_text = err_path.read_text(errors="replace") if err_path.exists() else ""
         combined_output = f"{out_text}\n{err_text}"
-        missing = [pattern for pattern in PATTERNS[benchmark] if not re.search(pattern, combined_output)]
-        h5_files = sorted(str(path) for path in profile_root.glob(f"{job_id}_*.h5")) if profile_root.exists() else []
+        missing = [
+            pattern
+            for pattern in PATTERNS[benchmark]
+            if not re.search(pattern, combined_output)
+        ]
+        h5_files = (
+            sorted(str(path) for path in profile_root.glob(f"{job_id}_*.h5"))
+            if profile_root.exists()
+            else []
+        )
 
         state = "validated"
         if not out_path.exists():
             errors.append(f"missing stdout for {benchmark} job {job_id}")
             state = "failed"
         if missing:
-            errors.append(f"output contract failed for {benchmark} job {job_id}: {missing}")
+            errors.append(
+                f"output contract failed for {benchmark} job {job_id}: {missing}"
+            )
             state = "failed"
         if not h5_files:
             errors.append(f"no HDF5 profile found for {benchmark} job {job_id}")

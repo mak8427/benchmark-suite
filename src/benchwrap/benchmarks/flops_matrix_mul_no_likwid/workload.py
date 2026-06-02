@@ -20,7 +20,7 @@ t0 = time.time()
 c = a @ b  # heavy lift: BLAS dgemm
 dt = time.time() - t0
 print(
-    f"GEMM done in {dt:.2f} s → {8*n**3/dt/1e9:.2f} GFLOP/s in time: {time.time() -start_time}",
+    f"GEMM done in {dt:.2f} s → {8*n**3/dt/1e9:.2f} GFLOP/s in time: {time.time() - start_time}",
     flush=True,
 )
 
@@ -29,5 +29,5 @@ start_time = time.time()
 norm = np.linalg.norm(c)
 mem = psutil.virtual_memory().percent
 print(
-    f" Frobenius = {norm:.3e}\n  RAM usage = {mem}% in time: {time.time() -start_time}"
+    f" Frobenius = {norm:.3e}\n  RAM usage = {mem}% in time: {time.time() - start_time}"
 )  #
