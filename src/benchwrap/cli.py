@@ -109,7 +109,9 @@ def describe(name: str) -> None:
     default=False,
     help="Request exclusive node access for this benchmark.",
 )
-def run(name, partition, nodes, opt_partition, opt_nodes, opt_nodelist, opt_node, exclusive):
+def run(
+    name, partition, nodes, opt_partition, opt_nodes, opt_nodelist, opt_node, exclusive
+):
     """Execute a benchmark matching ``name``.
 
     Input: optional positional/flagged arguments for benchmark name and SLURM options.

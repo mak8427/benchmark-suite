@@ -163,7 +163,9 @@ def test_run_builtin(monkeypatch):
     (fake_pkg / "std.py").write_text("# x")
     monkeypatch.setattr(cli.res, "files", lambda _: fake_pkg)
     calls = []
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs)))
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs))
+    )
     r = CliRunner().invoke(cli.run, ["std"])
     assert r.exit_code == 0
     assert any("-m" in c[0] for c in calls)
@@ -178,9 +180,13 @@ def test_run_builtin_sets_target_node_env(monkeypatch):
     (fake_pkg / "std.py").write_text("# x")
     monkeypatch.setattr(cli.res, "files", lambda _: fake_pkg)
     calls = []
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs)))
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs))
+    )
 
-    r = CliRunner().invoke(cli.run, ["std", "--partition", "medium", "--node", "amp014"])
+    r = CliRunner().invoke(
+        cli.run, ["std", "--partition", "medium", "--node", "amp014"]
+    )
 
     assert r.exit_code == 0
     args, kwargs = calls[0]
