@@ -68,7 +68,8 @@ def main() -> int:
 
         out_text = out_path.read_text(errors="replace") if out_path.exists() else ""
         err_text = err_path.read_text(errors="replace") if err_path.exists() else ""
-        missing = [pattern for pattern in PATTERNS[benchmark] if not re.search(pattern, out_text)]
+        combined_output = f"{out_text}\n{err_text}"
+        missing = [pattern for pattern in PATTERNS[benchmark] if not re.search(pattern, combined_output)]
         h5_files = sorted(str(path) for path in profile_root.glob(f"{job_id}_*.h5")) if profile_root.exists() else []
 
         state = "validated"
@@ -76,10 +77,7 @@ def main() -> int:
             errors.append(f"missing stdout for {benchmark} job {job_id}")
             state = "failed"
         if missing:
-            errors.append(f"stdout contract failed for {benchmark} job {job_id}: {missing}")
-            state = "failed"
-        if err_text.strip():
-            errors.append(f"stderr not empty for {benchmark} job {job_id}: {err_path}")
+            errors.append(f"output contract failed for {benchmark} job {job_id}: {missing}")
             state = "failed"
         if not h5_files:
             errors.append(f"no HDF5 profile found for {benchmark} job {job_id}")
@@ -91,6 +89,7 @@ def main() -> int:
                 "state": state,
                 "stdout": str(out_path),
                 "stderr": str(err_path),
+                "stderr_bytes": len(err_text.encode()),
                 "h5_count": len(h5_files),
                 "sacct": read_sacct(job_id),
             }

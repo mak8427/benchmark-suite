@@ -65,6 +65,56 @@ def test_campaign_validator_accepts_successful_manifest(monkeypatch, tmp_path) -
     assert (artifacts / "coremark_mini/job_42/slurm-42.out").is_file()
 
 
+def test_campaign_validator_accepts_signature_in_stderr(monkeypatch, tmp_path) -> None:
+    """LIKWID campaigns can put sampled data and benchmark stdout in stderr."""
+    home = tmp_path / "home"
+    profile = tmp_path / "profiles"
+    artifacts = tmp_path / "artifacts"
+    job_dir = home / ".local/share/benchwrap/jobs/coremark_mini/job_44"
+    job_dir.mkdir(parents=True)
+    profile.mkdir()
+    manifest = artifacts / "manifest.jsonl"
+    artifacts.mkdir()
+
+    (job_dir / "slurm-44.out").write_text(
+        "LIKWID output saved to timeline_44.csv\nElapsed: 1 min\n", encoding="utf-8"
+    )
+    (job_dir / "slurm-44.err").write_text(
+        "1 10 1 30.001 0.999 1.23 2883.08\n"
+        "coremark_mini digest=621589429 rounds=167 score=53236915.59 ops/s\n",
+        encoding="utf-8",
+    )
+    (profile / "44_batch_agq001.h5").write_bytes(b"h5")
+    manifest.write_text(
+        json.dumps(
+            {
+                "benchmark": "coremark_mini",
+                "run": 1,
+                "job_id": "44",
+                "partition": "medium",
+                "nodes": 1,
+                "state": "submitted",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("BENCHWRAP_SLURM_PROFILE_ROOT", str(profile))
+    monkeypatch.setenv("BENCHWRAP_CAMPAIGN_ARTIFACTS", str(artifacts))
+    validator = _load_validator()
+    monkeypatch.setattr(validator, "read_sacct", lambda _job_id: "44|COMPLETED|0:0")
+    monkeypatch.setattr(
+        validator, "parse_args", lambda: type("Args", (), {"manifest": manifest})()
+    )
+
+    assert validator.main() == 0
+    record = json.loads(manifest.read_text().strip())
+    assert record["state"] == "validated"
+    assert record["stderr_bytes"] > 0
+
+
 def test_campaign_validator_rejects_missing_output_signature(
     monkeypatch, tmp_path
 ) -> None:
