@@ -5,7 +5,7 @@ import time
 import numpy as np
 import psutil
 
-n = 12_000
+n = int(os.getenv("FLOPS_MATRIX_MUL_MINI_N", "12000"))
 gb = 2 * n * n * 8 / 1e9
 print(f"Allocating two {n}x{n} matrices ≈{gb:.1f} GB", flush=True)
 

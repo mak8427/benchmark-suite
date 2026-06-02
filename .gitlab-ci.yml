@@ -57,6 +57,12 @@ unit-tests:
       - coverage.xml
     expire_in: 1 week
 
+benchmark-smoke:
+  stage: test
+  script:
+    - python -m pip install -e . pytest
+    - python -m pytest tests/test_benchmark_outputs.py tests/test_benchmark_scripts.py -v --tb=short
+
 package:
   stage: package
   script:
@@ -78,6 +84,28 @@ slurm-e2e:
   script:
     - python -m pip install pytest dist/*.whl
     - bash .ci/scripts/slurm-e2e.sh
+
+slurm-campaign:
+  stage: e2e
+  needs: ["package"]
+  tags:
+    - slurm
+  variables:
+    BENCHWRAP_CAMPAIGN_PARTITION: "medium"
+    BENCHWRAP_CAMPAIGN_RUNS: "3"
+    BENCHWRAP_CAMPAIGN_ARTIFACTS: "campaign-artifacts"
+  rules:
+    - if: $RUN_SLURM_CAMPAIGN == "1"
+    - when: manual
+      allow_failure: true
+  script:
+    - python -m pip install dist/*.whl
+    - bash .ci/scripts/slurm-campaign.sh
+  artifacts:
+    when: always
+    paths:
+      - campaign-artifacts/
+    expire_in: 2 weeks
 
 security:
   stage: security

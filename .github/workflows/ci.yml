@@ -75,6 +75,22 @@ jobs:
           name: python-dist
           path: dist/
 
+  benchmark-smoke:
+    name: Benchmark Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            src/requirements.txt
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e . pytest
+      - run: python -m pytest tests/test_benchmark_outputs.py tests/test_benchmark_scripts.py -v --tb=short
+
   slurm-e2e:
     name: Slurm E2E
     runs-on: ubuntu-latest
