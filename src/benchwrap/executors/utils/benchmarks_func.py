@@ -176,7 +176,7 @@ def sbatch_launch(
 
 def check_ior():
     if os.path.exists(
-        f"{os.environ["HOME"]}/.local/share/benchwrap/benchmarks/io500/bin/ior"
+        f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks/io500/bin/ior"
     ):
         return True
     else:
@@ -185,7 +185,7 @@ def check_ior():
 
 
 def check_io500():
-    if os.path.exists(f"{os.environ["HOME"]}/.local/share/benchwrap/benchmarks/io500"):
+    if os.path.exists(f"{os.environ['HOME']}/.local/share/benchwrap/benchmarks/io500"):
         return True
     else:
         print("No io500 found")
